@@ -3,16 +3,17 @@
 Import-Module Microsoft.PowerShell.SecretsManagement
 
 if ($args.Count -eq 0) {
-	Write-Host "Please provide the day number";
-	exit 1;
+	Write-Host "Please provide the day number"
+	exit 1
 }
 
+$year = "2020"
 $day = $args[0]
 
 $outputFile = If ($day -ge 10) { "$day.txt" } Else { "0$day.txt" }
-$outputPath = "./src/AoC_2020/Inputs/$outputFile"
+$outputPath = "./src/AoC_$year/Inputs/$outputFile"
 
-$url = "https://adventofcode.com/2020/day/$day/input"
+$url = "https://adventofcode.com/$year/day/$day/input"
 
 $cookie = New-Object System.Net.Cookie
 $cookie.Name = "session"

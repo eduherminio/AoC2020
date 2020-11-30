@@ -7,8 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AoCHelper" Version="0.8.2" />
+    <PackageReference Include="AoCHelper" Version="0.10.0" />
     <PackageReference Include="FileParser" Version="2.0.0" />
+    <PackageReference Include="SheepTools" Version="0.7.0" />
   </ItemGroup>
 
   <PropertyGroup>
