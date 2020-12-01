@@ -7,11 +7,11 @@ namespace AoC_2020
 {
     public class Day_01 : BaseDay
     {
-        internal readonly ICollection<int> _input;
+        private readonly List<int> _input;
 
         public Day_01()
         {
-            _input = File.ReadAllLines(InputFilePath).Select(i => int.Parse(i)).ToList();
+            _input = File.ReadAllLines(InputFilePath).Select(int.Parse).ToList();
         }
 
         public override string Solve_1()
@@ -39,10 +39,10 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            return CalculateIteratively();
+            return DictionaryApproach();
         }
 
-        public string CalculateIteratively()
+        public string DictionaryApproach()
         {
             Dictionary<int, List<int>> existingGroups = new Dictionary<int, List<int>>();
 
@@ -73,11 +73,34 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Slightly slower for part 1, significatively slower for part 2
+        /// Over 2 x slower than dictionary approach, but almost 0 memory allocation.
+        /// </summary>
+        /// <returns></returns>
+        public string NestedLoopsApproach()
+        {
+            for (int i = 0; i < _input.Count; ++i)
+            {
+                for (int j = i; j < _input.Count; ++j)
+                {
+                    for (int k = j; k < _input.Count; ++k)
+                    {
+                        if (_input[i] + _input[j] + _input[k] == 2020)
+                        {
+                            return (_input[i] * _input[j] * _input[k]).ToString();
+                        }
+                    }
+                }
+            }
+            throw new SolvingException();
+        }
+
+        /// <summary>
+        /// Slightly slower for part 1, significatively (> 500x) slower for part 2.
+        /// Allocates a huge amount of memory.
         /// </summary>
         /// <param name="numberofItems"></param>
         /// <returns></returns>
-        public string CalculateUsingCombinations(int numberofItems)
+        public string CombinationsApproach(int numberofItems)
         {
             return _input.DifferentCombinations(numberofItems)
                 .First(en => en.Sum() == 2020)
