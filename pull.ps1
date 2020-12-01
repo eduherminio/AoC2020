@@ -27,4 +27,5 @@ Invoke-WebRequest $url -WebSession $session -TimeoutSec 5 -OutFile $outputPath
 
 if (Test-Path $outputPath) {
 	Write-Host "Input of Day $day downloaded to $outputPath"
+	cat $outputPath
 }
