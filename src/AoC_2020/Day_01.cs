@@ -7,6 +7,7 @@ namespace AoC_2020
 {
     public class Day_01 : BaseDay
     {
+        private const int TwentyTwenty = 2020;
         private readonly List<int> _input;
 
         public Day_01()
@@ -19,14 +20,14 @@ namespace AoC_2020
             var sum = new HashSet<int>();
             foreach (var input in _input)
             {
-                if (input > 2020)
+                if (input > TwentyTwenty)
                 {
                     continue;
                 }
 
                 foreach (var n in sum)
                 {
-                    if (n + input == 2020)
+                    if (n + input == TwentyTwenty)
                     {
                         return (n * input).ToString();
                     }
@@ -48,17 +49,17 @@ namespace AoC_2020
 
             foreach (var input in _input)
             {
-                if (input > 2020)
+                if (input > TwentyTwenty)
                 {
                     continue;
                 }
 
-                var candidateGroups = existingGroups.Where(n => n.Key + input <= 2020 && n.Value.Count < 3).ToList();
+                var candidateGroups = existingGroups.Where(n => n.Key + input <= TwentyTwenty && n.Value.Count < 3).ToList();
                 for (int i = 0; i < candidateGroups.Count; ++i)
                 {
                     var entry = candidateGroups[i];
 
-                    if (entry.Value.Count == 2 && entry.Value.Sum() + input == 2020)
+                    if (entry.Value.Count == 2 && entry.Value.Sum() + input == TwentyTwenty)
                     {
                         return (input * entry.Value[0] * entry.Value[1]).ToString();
                     }
@@ -84,7 +85,7 @@ namespace AoC_2020
                 {
                     for (int k = j; k < _input.Count; ++k)
                     {
-                        if (_input[i] + _input[j] + _input[k] == 2020)
+                        if (_input[i] + _input[j] + _input[k] == TwentyTwenty)
                         {
                             return (_input[i] * _input[j] * _input[k]).ToString();
                         }
@@ -92,6 +93,19 @@ namespace AoC_2020
                 }
             }
             throw new SolvingException();
+        }
+
+        /// <summary>
+        /// Slighly faster than the nested loops approach in exchange of allocating some (very little) memory.
+        /// https://www.reddit.com/r/adventofcode/comments/k4e4lm/2020_day_1_solutions/ge95uga
+        /// </summary>
+        /// <returns></returns>
+        public string LinqApproach()
+        {
+            return _input.Where(o =>
+                 _input.Find(c => _input.Contains(TwentyTwenty - o - c)) != default)
+                 .Aggregate(1, (o, c) => o * c)
+                 .ToString();
         }
 
         /// <summary>
@@ -103,7 +117,7 @@ namespace AoC_2020
         public string CombinationsApproach(int numberofItems)
         {
             return _input.DifferentCombinations(numberofItems)
-                .First(en => en.Sum() == 2020)
+                .First(en => en.Sum() == TwentyTwenty)
                 .Aggregate(1, (total, n) => total * n)
                 .ToString();
         }

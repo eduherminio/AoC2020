@@ -17,5 +17,8 @@ namespace AoC_2020.Benchmarks
 
         [Benchmark]
         public string NestedLoopsApproach() => _problem.NestedLoopsApproach();
+
+        [Benchmark]
+        public string LinqApproach() => _problem.LinqApproach();
     }
 }
