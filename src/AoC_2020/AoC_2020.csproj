@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="AoCHelper" Version="0.10.0" />
     <PackageReference Include="FileParser" Version="2.0.0" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="SheepTools" Version="0.7.0" />
   </ItemGroup>
 
@@ -20,6 +21,12 @@
     <None Update="Inputs\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>$(AssemblyName).Benchmark</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>
