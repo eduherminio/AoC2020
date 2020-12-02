@@ -46,5 +46,6 @@ jobs:
     - name: Build
       run: dotnet build -c Release
 
-    - name: Run tests
-      run: dotnet run -c Release --no-build
+    - name: Run
+      run: dotnet run AoC_2020.csproj -c Release --no-build
+      working-directory: ./src/AoC_2020
