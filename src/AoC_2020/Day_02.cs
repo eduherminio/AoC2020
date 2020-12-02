@@ -2,6 +2,7 @@
 using FileParser;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AoC_2020
 {
@@ -14,17 +15,47 @@ namespace AoC_2020
             _input = ParseInput().ToList();
         }
 
-        public override string Solve_1()
-        {
-            return _input.Count(p =>
-            {
-                var charsCount = p.Content.Count(ch => ch == p.Policy);
+        public override string Solve_1() => Part1_Regex();
 
-                return charsCount <= p.Rule.Last && charsCount >= p.Rule.First;
+        public override string Solve_2() => Part2_xor();
+
+        internal string Part1_Linq()
+        {
+            return _input.Count(password =>
+            {
+                var charsCount = password.Content.Count(ch => ch == password.Policy);
+
+                return charsCount <= password.Rule.Last && charsCount >= password.Rule.First;
             }).ToString();
         }
 
-        public override string Solve_2()
+        /// <summary>
+        /// ~6 time slower than Linq alternative
+        /// </summary>
+        /// <returns></returns>
+        internal string Part1_Regex()
+        {
+            return _input.Count(password =>
+            {
+                var expression = new Regex($"[{password.Policy}]{{{password.Rule.First},{password.Rule.Last}}}");
+
+                return expression.IsMatch(password.Content);
+            }).ToString();
+        }
+
+        internal string Part2_xor()
+        {
+            return _input.Count(password =>
+                                    password.Content[password.Rule.First - 1] == password.Policy
+                                    ^ password.Content[password.Rule.Last - 1] == password.Policy)
+                .ToString();
+        }
+
+        /// <summary>
+        /// Time times slower than xor alternative, and allocating memory
+        /// </summary>
+        /// <returns></returns>
+        internal string Part2_Linq()
         {
             return _input.Count(p =>
             {

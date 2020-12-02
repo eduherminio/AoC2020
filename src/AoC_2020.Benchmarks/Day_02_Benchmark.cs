@@ -5,18 +5,18 @@ namespace AoC_2020.Benchmarks
 {
     [MemoryDiagnoser]
     [NativeMemoryProfiler]
-    public class Day_01_Benchmark
+    public class Day_02_Benchmark
     {
-        private readonly Day_01 _problem = new Day_01();
+        private readonly Day_02 _problem = new();
 
         [Benchmark]
-        public string Part2_Dictionary() => _problem.Part2_Dictionary();
+        public string Part1_Linq() => _problem.Part1_Linq();
 
         [Benchmark]
-        public string Part2_Combinations() => _problem.Part2_Combinations(3);
+        public string Part1_Regex() => _problem.Part1_Regex();
 
         [Benchmark]
-        public string Part2_NestedLoops() => _problem.Part2_NestedLoops();
+        public string Part2_xor() => _problem.Part2_xor();
 
         [Benchmark]
         public string Part2_Linq() => _problem.Part2_Linq();

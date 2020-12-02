@@ -38,14 +38,11 @@ namespace AoC_2020
             throw new SolvingException();
         }
 
-        public override string Solve_2()
-        {
-            return DictionaryApproach();
-        }
+        public override string Solve_2() => Part2_Dictionary();
 
-        public string DictionaryApproach()
+        internal string Part2_Dictionary()
         {
-            Dictionary<int, List<int>> existingGroups = new Dictionary<int, List<int>>();
+            var existingGroups = new Dictionary<int, List<int>>();
 
             foreach (var input in _input)
             {
@@ -77,7 +74,7 @@ namespace AoC_2020
         /// Over 2 x slower than dictionary approach, but almost 0 memory allocation.
         /// </summary>
         /// <returns></returns>
-        public string NestedLoopsApproach()
+        internal string Part2_NestedLoops()
         {
             for (int i = 0; i < _input.Count; ++i)
             {
@@ -100,7 +97,7 @@ namespace AoC_2020
         /// https://www.reddit.com/r/adventofcode/comments/k4e4lm/2020_day_1_solutions/ge95uga
         /// </summary>
         /// <returns></returns>
-        public string LinqApproach()
+        internal string Part2_Linq()
         {
             return _input.Where(input1 =>
                  _input.Find(input2 => _input.Contains(TwentyTwenty - input1 - input2)) != default)
@@ -114,7 +111,7 @@ namespace AoC_2020
         /// </summary>
         /// <param name="numberofItems"></param>
         /// <returns></returns>
-        public string CombinationsApproach(int numberofItems)
+        internal string Part2_Combinations(int numberofItems)
         {
             return _input.DifferentCombinations(numberofItems)
                 .First(en => en.Sum() == TwentyTwenty)
