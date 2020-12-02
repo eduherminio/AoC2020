@@ -102,8 +102,8 @@ namespace AoC_2020
         /// <returns></returns>
         public string LinqApproach()
         {
-            return _input.Where(o =>
-                 _input.Find(c => _input.Contains(TwentyTwenty - o - c)) != default)
+            return _input.Where(input1 =>
+                 _input.Find(input2 => _input.Contains(TwentyTwenty - input1 - input2)) != default)
                  .Aggregate(1, (o, c) => o * c)
                  .ToString();
         }
