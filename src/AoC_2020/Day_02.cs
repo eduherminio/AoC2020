@@ -2,7 +2,6 @@
 using FileParser;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace AoC_2020
 {
@@ -15,11 +14,7 @@ namespace AoC_2020
             _input = ParseInput().ToList();
         }
 
-        public override string Solve_1() => Part1_Regex();
-
-        public override string Solve_2() => Part2_xor();
-
-        internal string Part1_Linq()
+        public override string Solve_1()
         {
             return _input.Count(password =>
             {
@@ -29,19 +24,7 @@ namespace AoC_2020
             }).ToString();
         }
 
-        /// <summary>
-        /// ~6 time slower than Linq alternative
-        /// </summary>
-        /// <returns></returns>
-        internal string Part1_Regex()
-        {
-            return _input.Count(password =>
-            {
-                var expression = new Regex($"[{password.Policy}]{{{password.Rule.First},{password.Rule.Last}}}");
-
-                return expression.IsMatch(password.Content);
-            }).ToString();
-        }
+        public override string Solve_2() => Part2_xor();
 
         internal string Part2_xor()
         {
