@@ -5,7 +5,7 @@ System.Console.WriteLine(args.Length);
 
 if (args.Length == 0)       // dotnet run
 {
-    Solver.SolveLast();
+    Solver.SolveLast(clearConsole: false);
 }
 else if (args.Length == 1 && args[0].Contains("all", System.StringComparison.CurrentCultureIgnoreCase))     // dotnet run all | dotnet run --all
 {
