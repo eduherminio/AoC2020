@@ -172,19 +172,9 @@ namespace AoC_2020
 
         private List<List<char>> ParseInputAsCharList()
         {
-            var lines = File.ReadAllLines(InputFilePath);
-
-            var list = new List<List<char>>(lines.Length);
-            for (int i = 0; i < lines.Length; ++i)
-            {
-                list.Add(new List<char>(lines[0].Length));
-                for (int j = 0; j < lines[0].Length; ++j)
-                {
-                    list[i].Add(lines[i][j]);
-                }
-            }
-
-            return list;
+            return File.ReadAllLines(InputFilePath)
+                .Select(str => str.ToList())
+                .ToList();
         }
     }
 }
