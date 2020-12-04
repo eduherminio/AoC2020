@@ -11,15 +11,15 @@ namespace AoC_2020
     {
         private readonly List<Dictionary<string, string>> _input;
 
-        #region Part2_AsLittleRegexAsPossible solution
+        private static readonly string[] FieldsToCheck = new[]
+        {
+            "byr" ,"iyr" ,"eyr", "hgt", "hcl", "ecl", "pid"
+        };
 
+        //  Part2_AsLittleRegexAsPossible solution
         private static readonly Regex HclRegex = new Regex("^#[a-f0-9]{6}$", RegexOptions.Compiled);
         private static readonly Regex PidRegex = new Regex("^[0-9]{9}$", RegexOptions.Compiled);
         private static readonly IReadOnlyCollection<string> ValidEcl = new List<string> { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
-
-        #endregion
-
-        #region Proper regex solutions
 
         /// <summary>
         /// Regex patterns by @robertosanval and @mariomka (thanks!)
@@ -37,29 +37,6 @@ namespace AoC_2020
             ["pid"] = new Regex(@"^\d{9}$", RegexOptions.Compiled)
         };
 
-        /// <summary>
-        /// Regex patterns by @robertosanval and @mariomka (thanks!)
-        /// Roberto's code: https://github.com/robertosanval/aoc2020/blob/master/src/day4/index.js
-        /// Mario's code: https://github.com/mariomka/AdventOfCode2020 (TODO: add link to file when it's up)
-        /// </summary>
-        private static readonly Dictionary<string, Regex> RegexExpressions = new Dictionary<string, Regex>
-        {
-            ["byr"] = new Regex("^(19[2-8][0-9]|199[0-9]|200[0-2])$"),
-            ["iyr"] = new Regex("^(201[0-9]|2020)$"),
-            ["eyr"] = new Regex("^(202[0-9]|2030)$"),
-            ["hgt"] = new Regex("^((1[5-8][0-9]|19[0-3])cm|(59|6[0-9]|7[0-6])in)$"),
-            ["hcl"] = new Regex("^#[0-9a-f]{6}$"),
-            ["ecl"] = new Regex("^amb|blu|brn|gry|grn|hzl|oth$"),
-            ["pid"] = new Regex(@"^\d{9}$")
-        };
-
-        private static readonly string[] FieldsToCheck = new[]
-        {
-            "byr" ,"iyr" ,"eyr", "hgt", "hcl", "ecl", "pid"
-        };
-
-        #endregion
-
         public Day_04()
         {
             _input = ParseInput();
@@ -73,9 +50,9 @@ namespace AoC_2020
             .ToString();
         }
 
-        public override string Solve_2() => Part2_CompiledRegex();
+        public override string Solve_2() => Part2_Regex();
 
-        internal string Part2_CompiledRegex()
+        internal string Part2_Regex()
         {
             return _input.Count(dict =>
                 FieldsToCheck.All(key =>
@@ -85,7 +62,7 @@ namespace AoC_2020
 
         /// <summary>
         /// My initial solution after clean up.
-        /// ~2 times slower than the compilex regex, but ~2 times faster than the non-compiled regex
+        /// ~2 times slower than the regex (compiled) one
         /// </summary>
         /// <returns></returns>
         internal string Part2_AsLittleRegexAsPossible()
@@ -150,18 +127,6 @@ namespace AoC_2020
                     && ((hgtStr.EndsWith("cm") && hgt >= 150 && hgt <= 193)
                         || (hgtStr.EndsWith("in") && hgt >= 59 && hgt <= 76));
             }
-        }
-
-        /// <summary>
-        /// Just for comparison purposes with the compiled regex one
-        /// </summary>
-        /// <returns></returns>
-        internal string Part2_Regex()
-        {
-            return _input.Count(dict =>
-                FieldsToCheck.All(key =>
-                    dict.TryGetValue(key, out var str) && RegexExpressions[key].IsMatch(str)))
-            .ToString();
         }
 
         private List<Dictionary<string, string>> ParseInput()
