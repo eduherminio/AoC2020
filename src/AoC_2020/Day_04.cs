@@ -85,77 +85,71 @@ namespace AoC_2020
 
         /// <summary>
         /// My initial solution after clean up.
-        /// 2-3 times slower than the regex one, and 3-4 times slower than the compiled regex one
+        /// ~2 times slower than the compilex regex, but ~2 times faster than the non-compiled regex
         /// </summary>
         /// <returns></returns>
         internal string Part2_AsLittleRegexAsPossible()
         {
-            return _input.Count(hash =>
+            return _input.Count(dict =>
+                       Validate_bhr(dict)
+                    && Validate_iyr(dict)
+                    && Validate_eyr(dict)
+                    && Validate_hcl(dict)
+                    && Validate_ecl(dict)
+                    && Validate_pid(dict)
+                    && Validate_hgt(dict))
+                .ToString();
+
+            static bool Validate_bhr(Dictionary<string, string> hash)
             {
-                if (!hash.TryGetValue("byr", out var byrStr)
-                    || !int.TryParse(byrStr, out var byr)
-                    || byr < 1920
-                    || byr > 2002)
-                {
-                    return false;
-                }
+                return hash.TryGetValue("byr", out var byrStr)
+                    && int.TryParse(byrStr, out var byr)
+                    && byr >= 1920
+                    && byr <= 2002;
+            }
 
-                if (!hash.TryGetValue("iyr", out var iyrStr)
-                    || !int.TryParse(iyrStr, out var iyr)
-                    || iyr < 2010
-                    || iyr > 2020)
-                {
-                    return false;
-                }
+            static bool Validate_iyr(Dictionary<string, string> dict)
+            {
+                return dict.TryGetValue("iyr", out var iyrStr)
+                    && int.TryParse(iyrStr, out var iyr)
+                    && iyr >= 2010
+                    && iyr <= 2020;
+            }
 
-                if (!hash.TryGetValue("eyr", out var eyrStr)
-                    || !int.TryParse(eyrStr, out var eyr)
-                    || eyr < 2020
-                    || eyr > 2030)
-                {
-                    return false;
-                }
+            static bool Validate_eyr(Dictionary<string, string> dict)
+            {
+                return dict.TryGetValue("eyr", out var eyrStr)
+                    && int.TryParse(eyrStr, out var eyr)
+                    && eyr >= 2020
+                    && eyr <= 2030;
+            }
 
-                if (!hash.TryGetValue("hgt", out var hgtStr)
-                    || (!hgtStr.EndsWith("cm")
-                        && !hgtStr.EndsWith("in"))
-                    || !int.TryParse(hgtStr[..^2], out var hgt))
-                {
-                    return false;
-                }
+            static bool Validate_hcl(Dictionary<string, string> dict)
+            {
+                return dict.TryGetValue("hcl", out var hclStr)
+                    && HclRegex.IsMatch(hclStr);
+            }
 
-                if (hgtStr.EndsWith("in")
-                    && (hgt < 59 || hgt > 76))
-                {
-                    return false;
-                }
+            static bool Validate_pid(Dictionary<string, string> dict)
+            {
+                return dict.TryGetValue("pid", out var pidStr)
+                    && PidRegex.IsMatch(pidStr);
+            }
 
-                if (hgtStr.EndsWith("cm")
-                    && (hgt < 150 || hgt > 193))
-                {
-                    return false;
-                }
+            static bool Validate_ecl(Dictionary<string, string> dict)
+            {
+                return dict.TryGetValue("ecl", out var eclStr)
+                    && ValidEcl.Contains(eclStr);
+            }
 
-                if (!hash.TryGetValue("hcl", out var hclStr)
-                    || !HclRegex.IsMatch(hclStr))
-                {
-                    return false;
-                }
-
-                if (!hash.TryGetValue("ecl", out var eclStr)
-                    || !ValidEcl.Contains(eclStr))
-                {
-                    return false;
-                }
-
-                if (!hash.TryGetValue("pid", out var pidStr)
-                    || !PidRegex.IsMatch(pidStr))
-                {
-                    return false;
-                }
-
-                return true;
-            }).ToString();
+            static bool Validate_hgt(Dictionary<string, string> dict)
+            {
+                return
+                    dict.TryGetValue("hgt", out var hgtStr)
+                    && int.TryParse(hgtStr[..^2], out var hgt)
+                    && ((hgtStr.EndsWith("cm") && hgt >= 150 && hgt <= 193)
+                        || (hgtStr.EndsWith("in") && hgt >= 59 && hgt <= 76));
+            }
         }
 
         /// <summary>
