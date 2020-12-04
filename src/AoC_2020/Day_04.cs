@@ -11,9 +11,54 @@ namespace AoC_2020
     {
         private readonly List<Dictionary<string, string>> _input;
 
-        private readonly Regex _hclRegex = new Regex("^#[a-f0-9]{6}$", RegexOptions.Compiled);
-        private readonly Regex _pidRegex = new Regex("^[0-9]{9}$", RegexOptions.Compiled);
-        private readonly IReadOnlyCollection<string> _validEcl = new List<string> { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
+        #region Part2_AsLittleRegexAsPossible solution
+
+        private static readonly Regex HclRegex = new Regex("^#[a-f0-9]{6}$", RegexOptions.Compiled);
+        private static readonly Regex PidRegex = new Regex("^[0-9]{9}$", RegexOptions.Compiled);
+        private static readonly IReadOnlyCollection<string> ValidEcl = new List<string> { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
+
+        #endregion
+
+        #region Proper regex solutions
+
+        /// <summary>
+        /// Regex patterns by @robertosanval and @mariomka (thanks!)
+        /// Roberto's code: https://github.com/robertosanval/aoc2020/blob/master/src/day4/index.js
+        /// Mario's code: https://github.com/mariomka/AdventOfCode2020 (TODO: add link to file when it's up)
+        /// </summary>
+        private static readonly Dictionary<string, Regex> CompiledRegexExpressions = new Dictionary<string, Regex>
+        {
+            ["byr"] = new Regex("^(19[2-8][0-9]|199[0-9]|200[0-2])$", RegexOptions.Compiled),
+            ["iyr"] = new Regex("^(201[0-9]|2020)$", RegexOptions.Compiled),
+            ["eyr"] = new Regex("^(202[0-9]|2030)$", RegexOptions.Compiled),
+            ["hgt"] = new Regex("^((1[5-8][0-9]|19[0-3])cm|(59|6[0-9]|7[0-6])in)$", RegexOptions.Compiled),
+            ["hcl"] = new Regex("^#[0-9a-f]{6}$", RegexOptions.Compiled),
+            ["ecl"] = new Regex("^amb|blu|brn|gry|grn|hzl|oth$", RegexOptions.Compiled),
+            ["pid"] = new Regex(@"^\d{9}$", RegexOptions.Compiled)
+        };
+
+        /// <summary>
+        /// Regex patterns by @robertosanval and @mariomka (thanks!)
+        /// Roberto's code: https://github.com/robertosanval/aoc2020/blob/master/src/day4/index.js
+        /// Mario's code: https://github.com/mariomka/AdventOfCode2020 (TODO: add link to file when it's up)
+        /// </summary>
+        private static readonly Dictionary<string, Regex> RegexExpressions = new Dictionary<string, Regex>
+        {
+            ["byr"] = new Regex("^(19[2-8][0-9]|199[0-9]|200[0-2])$"),
+            ["iyr"] = new Regex("^(201[0-9]|2020)$"),
+            ["eyr"] = new Regex("^(202[0-9]|2030)$"),
+            ["hgt"] = new Regex("^((1[5-8][0-9]|19[0-3])cm|(59|6[0-9]|7[0-6])in)$"),
+            ["hcl"] = new Regex("^#[0-9a-f]{6}$"),
+            ["ecl"] = new Regex("^amb|blu|brn|gry|grn|hzl|oth$"),
+            ["pid"] = new Regex(@"^\d{9}$")
+        };
+
+        private static readonly string[] FieldsToCheck = new[]
+        {
+            "byr" ,"iyr" ,"eyr", "hgt", "hcl", "ecl", "pid"
+        };
+
+        #endregion
 
         public Day_04()
         {
@@ -23,24 +68,33 @@ namespace AoC_2020
         public override string Solve_1()
         {
             return _input.Count(dict =>
-            {
-                return dict.ContainsKey("byr")
-                    && dict.ContainsKey("iyr")
-                    && dict.ContainsKey("eyr")
-                    && dict.ContainsKey("hgt")
-                    && dict.ContainsKey("hcl")
-                    && dict.ContainsKey("ecl")
-                    && dict.ContainsKey("pid");
-            }).ToString();
+                FieldsToCheck.All(key =>
+                    dict.TryGetValue(key, out var str)))
+            .ToString();
         }
 
-        public override string Solve_2()
+        public override string Solve_2() => Part2_CompiledRegex();
+
+        internal string Part2_CompiledRegex()
+        {
+            return _input.Count(dict =>
+                FieldsToCheck.All(key =>
+                    dict.TryGetValue(key, out var str) && CompiledRegexExpressions[key].IsMatch(str)))
+            .ToString();
+        }
+
+        /// <summary>
+        /// My initial solution after clean up.
+        /// 2-3 times slower than the regex one, and 3-4 times slower than the compiled regex one
+        /// </summary>
+        /// <returns></returns>
+        internal string Part2_AsLittleRegexAsPossible()
         {
             return _input.Count(hash =>
             {
                 if (!hash.TryGetValue("byr", out var byrStr)
                     || !int.TryParse(byrStr, out var byr)
-                    || byr < 190
+                    || byr < 1920
                     || byr > 2002)
                 {
                     return false;
@@ -83,25 +137,37 @@ namespace AoC_2020
                 }
 
                 if (!hash.TryGetValue("hcl", out var hclStr)
-                    || !_hclRegex.IsMatch(hclStr))
+                    || !HclRegex.IsMatch(hclStr))
                 {
                     return false;
                 }
 
                 if (!hash.TryGetValue("ecl", out var eclStr)
-                    || !_validEcl.Contains(eclStr))
+                    || !ValidEcl.Contains(eclStr))
                 {
                     return false;
                 }
 
                 if (!hash.TryGetValue("pid", out var pidStr)
-                    || !_pidRegex.IsMatch(pidStr))
+                    || !PidRegex.IsMatch(pidStr))
                 {
                     return false;
                 }
 
                 return true;
             }).ToString();
+        }
+
+        /// <summary>
+        /// Just for comparison purposes with the compiled regex one
+        /// </summary>
+        /// <returns></returns>
+        internal string Part2_Regex()
+        {
+            return _input.Count(dict =>
+                FieldsToCheck.All(key =>
+                    dict.TryGetValue(key, out var str) && RegexExpressions[key].IsMatch(str)))
+            .ToString();
         }
 
         private List<Dictionary<string, string>> ParseInput()
