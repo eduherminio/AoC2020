@@ -11,5 +11,8 @@ namespace AoC_2020.Benchmarks
 
         [Benchmark]
         public string Part2_Regex() => _problem.Part2_Regex();
+
+        [Benchmark]
+        public string Part2_Regex_RawFile() => _problem.Part2_Regex_RawFile();
     }
 }

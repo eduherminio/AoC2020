@@ -9,22 +9,15 @@ namespace AoC_2020
 {
     public class Day_04 : BaseDay
     {
+        private readonly string _rawInput;
         private readonly List<Dictionary<string, string>> _input;
 
-        private static readonly string[] FieldsToCheck = new[]
-        {
-            "byr" ,"iyr" ,"eyr", "hgt", "hcl", "ecl", "pid"
-        };
+        private static readonly string[] FieldsToCheck = new[] { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
 
-        //  Part2_AsLittleRegexAsPossible solution
-        private static readonly Regex HclRegex = new Regex("^#[a-f0-9]{6}$", RegexOptions.Compiled);
-        private static readonly Regex PidRegex = new Regex("^[0-9]{9}$", RegexOptions.Compiled);
         private static readonly IReadOnlyCollection<string> ValidEcl = new List<string> { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
 
         /// <summary>
-        /// Regex patterns by @robertosanval and @mariomka (thanks!)
-        /// Roberto's code: https://github.com/robertosanval/aoc2020/blob/master/src/day4/index.js
-        /// Mario's code: https://github.com/mariomka/AdventOfCode2020 (TODO: add link to file when it's up)
+        /// Regex expressions by @robertosanval, https://github.com/robertosanval/aoc2020/blob/master/src/day4/index.js
         /// </summary>
         private static readonly Dictionary<string, Regex> CompiledRegexExpressions = new Dictionary<string, Regex>
         {
@@ -37,9 +30,32 @@ namespace AoC_2020
             ["pid"] = new Regex(@"^\d{9}$", RegexOptions.Compiled)
         };
 
+        /// <summary>
+        /// Regex expressions by @mariomka, https://github.com/mariomka/AdventOfCode2020/tree/master/day4
+        /// </summary>
+        private static readonly Regex RawFileRegex = new Regex(@"(?xm)
+    (
+        ( ( \s | \A ) cid:[^\s]+ )?
+        ( \s | \A )(
+            ( byr:( 19[2-9][0-9] | 200[0-2] ) ) |
+            ( iyr:( 201[0-9] | 2020 ) ) |
+            ( eyr:( 202[0-9] | 2030 ) ) |
+            ( hgt:(
+                ( 1[5-8][0-9] | 19[0-3] )cm |
+                ( 59 | 6[0-9] | 7[0-6] )in )
+            ) |
+            ( hcl:\#[0-9a-f]{6} ) |
+            ( ecl:( amb | blu | brn | gry | grn | hzl | oth ) ) |
+            ( pid:[0-9]{9} )
+        )\b
+        ( \s cid:[^\s]+ )?
+    ){7}
+    (\n|\z)", RegexOptions.Compiled);
+
         public Day_04()
         {
             _input = ParseInput();
+            _rawInput = File.ReadAllText(InputFilePath);
         }
 
         public override string Solve_1()
@@ -62,7 +78,7 @@ namespace AoC_2020
 
         /// <summary>
         /// My initial solution after clean up.
-        /// ~2 times slower than the regex (compiled) one
+        /// ~2 times slower than Part2_Regex
         /// </summary>
         /// <returns></returns>
         internal string Part2_AsLittleRegexAsPossible()
@@ -104,13 +120,13 @@ namespace AoC_2020
             static bool Validate_hcl(Dictionary<string, string> dict)
             {
                 return dict.TryGetValue("hcl", out var hclStr)
-                    && HclRegex.IsMatch(hclStr);
+                    && CompiledRegexExpressions["hcl"].IsMatch(hclStr);
             }
 
             static bool Validate_pid(Dictionary<string, string> dict)
             {
                 return dict.TryGetValue("pid", out var pidStr)
-                    && PidRegex.IsMatch(pidStr);
+                    && CompiledRegexExpressions["pid"].IsMatch(pidStr);
             }
 
             static bool Validate_ecl(Dictionary<string, string> dict)
@@ -127,6 +143,15 @@ namespace AoC_2020
                     && ((hgtStr.EndsWith("cm") && hgt >= 150 && hgt <= 193)
                         || (hgtStr.EndsWith("in") && hgt >= 59 && hgt <= 76));
             }
+        }
+
+        /// <summary>
+        /// ~6 times slower than Part2_Regex, ~3 times slower than Part2_AsLittleRegexAsPossible
+        /// </summary>
+        /// <returns></returns>
+        internal string Part2_Regex_RawFile()
+        {
+            return RawFileRegex.Matches(_rawInput).Count.ToString();
         }
 
         private List<Dictionary<string, string>> ParseInput()
@@ -149,6 +174,11 @@ namespace AoC_2020
                 foreach (var word in line.Split(' '))
                 {
                     var pair = word.Split(':');
+                    if (groups[index].TryGetValue(pair[0], out var existingValue))
+                    {
+                        throw new SolvingException("I wasn't expecting duplicated fields" +
+                            $"{pair[0]}: {existingValue} was about to be overriden with {pair[1]}");
+                    }
                     groups[index][pair[0]] = pair[1];
                 }
             }
