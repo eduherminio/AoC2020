@@ -64,40 +64,38 @@ namespace AoC_2020
 
                 if (!hash.TryGetValue("hgt", out var hgtStr)
                     || (!hgtStr.EndsWith("cm")
-                        && !hgtStr.EndsWith("in")))
+                        && !hgtStr.EndsWith("in"))
+                    || !int.TryParse(hgtStr[..^2], out var hgt))
                 {
                     return false;
                 }
 
-                if (hgtStr.EndsWith("in"))
-                {
-                    var hgt = int.Parse(hgtStr[..^2]);
-                    if (hgt < 59 || hgt > 76)
-                    {
-                        return false;
-                    }
-                }
-
-                if (hgtStr.EndsWith("cm"))
-                {
-                    var hgt = int.Parse(hgtStr[..^2]);
-                    if (hgt < 150 || hgt > 193)
-                    {
-                        return false;
-                    }
-                }
-
-                if (!hash.TryGetValue("hcl", out var hclStr) || !_hclRegex.IsMatch(hclStr))
+                if (hgtStr.EndsWith("in")
+                    && (hgt < 59 || hgt > 76))
                 {
                     return false;
                 }
 
-                if (!hash.TryGetValue("ecl", out var eclStr) || !_validEcl.Contains(eclStr))
+                if (hgtStr.EndsWith("cm")
+                    && (hgt < 150 || hgt > 193))
                 {
                     return false;
                 }
 
-                if (!hash.TryGetValue("pid", out var pidStr) || !_pidRegex.IsMatch(pidStr))
+                if (!hash.TryGetValue("hcl", out var hclStr)
+                    || !_hclRegex.IsMatch(hclStr))
+                {
+                    return false;
+                }
+
+                if (!hash.TryGetValue("ecl", out var eclStr)
+                    || !_validEcl.Contains(eclStr))
+                {
+                    return false;
+                }
+
+                if (!hash.TryGetValue("pid", out var pidStr)
+                    || !_pidRegex.IsMatch(pidStr))
                 {
                     return false;
                 }
