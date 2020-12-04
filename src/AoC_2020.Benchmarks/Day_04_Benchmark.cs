@@ -10,9 +10,6 @@ namespace AoC_2020.Benchmarks
         public string Part2_AsLittleRegexAsPossible() => _problem.Part2_AsLittleRegexAsPossible();
 
         [Benchmark]
-        public string Part2_CompiledRegex() => _problem.Part2_CompiledRegex();
-
-        [Benchmark]
         public string Part2_Regex() => _problem.Part2_Regex();
     }
 }
