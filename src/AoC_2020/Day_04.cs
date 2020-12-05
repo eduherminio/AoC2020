@@ -66,7 +66,7 @@ namespace AoC_2020
             .ToString();
         }
 
-        public override string Solve_2() => Part2_Regex();
+        public override string Solve_2() => Part2_AsLittleRegexAsPossible();
 
         internal string Part2_Regex()
         {
@@ -140,8 +140,12 @@ namespace AoC_2020
                 return
                     dict.TryGetValue("hgt", out var hgtStr)
                     && int.TryParse(hgtStr[..^2], out var hgt)
-                    && ((hgtStr.EndsWith("cm") && hgt >= 150 && hgt <= 193)
-                        || (hgtStr.EndsWith("in") && hgt >= 59 && hgt <= 76));
+                    && hgtStr[^2..] switch
+                    {
+                        "cm" => hgt >= 150 && hgt <= 193,
+                        "in" => hgt >= 59 && hgt <= 76,
+                        _ => false,
+                    };
             }
         }
 
