@@ -1,6 +1,7 @@
 ﻿using AoCHelper;
+using FileParser;
+using SheepTools.Extensions;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace AoC_2020
@@ -11,7 +12,7 @@ namespace AoC_2020
 
         public Day_06()
         {
-            _input = ParseInput();
+            _input = ParsedFile.ReadAllGroupsOfLines(InputFilePath);
         }
 
         public override string Solve_1()
@@ -21,8 +22,22 @@ namespace AoC_2020
                 .ToString();
         }
 
-        public override string Solve_2() => Part2_Linq();
+        public override string Solve_2() => Part2_IntersectAll();
 
+        /// <summary>
+        /// >2x faster than the original implementation
+        /// </summary>
+        /// <returns></returns>
+        public string Part2_IntersectAll()
+        {
+            return _input.Sum(group => group.IntersectAll().Count).ToString();
+        }
+
+        /// <summary>
+        /// Original implementation translated to Linq.
+        /// ~ speed and allocations as Part2_Loop.
+        /// </summary>
+        /// <returns></returns>
         public string Part2_Linq()
         {
             return _input.Sum(group =>
@@ -35,7 +50,8 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// ~ speed and allocations as Part2_Linq
+        /// Original implementation.
+        /// ~ speed and allocations as Part2_Linq.
         /// </summary>
         /// <returns></returns>
         public string Part2_Loop()
@@ -54,30 +70,6 @@ namespace AoC_2020
             }
 
             return result.ToString();
-        }
-
-        private List<List<string>> ParseInput()
-        {
-            var result = new List<List<string>>()
-            {
-                new List<string>()
-            };
-
-            var currentIndex = 0;
-
-            foreach (var line in File.ReadAllLines(InputFilePath))
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    result.Add(new List<string>());
-                    ++currentIndex;
-                    continue;
-                }
-
-                result[currentIndex].Add(line);
-            }
-
-            return result;
         }
     }
 }

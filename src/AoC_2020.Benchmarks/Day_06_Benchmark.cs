@@ -7,6 +7,9 @@ namespace AoC_2020.Benchmarks
         private readonly Day_06 _problem = new();
 
         [Benchmark]
+        public string Part2_IntersectAll() => _problem.Part2_IntersectAll();
+
+        [Benchmark]
         public string Part2_Linq() => _problem.Part2_Linq();
 
         [Benchmark]
