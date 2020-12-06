@@ -31,7 +31,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// ~ Speed as the Linq alternative, with ~ allocations
+        /// ~ speed and allocations as Part2_Linq
         /// </summary>
         /// <returns></returns>
         internal string Part2_Loop()
