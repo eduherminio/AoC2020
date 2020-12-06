@@ -4,7 +4,7 @@ using Xunit;
 
 namespace AoC_2020.Test
 {
-    public class SolutionTests
+    public static class SolutionTests
     {
         public class Solutions
         {

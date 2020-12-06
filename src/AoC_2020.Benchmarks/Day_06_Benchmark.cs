@@ -7,6 +7,15 @@ namespace AoC_2020.Benchmarks
         private readonly Day_06 _problem = new();
 
         [Benchmark]
+        public string Part1_Binary() => _problem.Part1_Binary();
+
+        [Benchmark]
+        public string Part1_Linq() => _problem.Part1_Linq();
+
+        [Benchmark]
+        public string Part2_Binary() => _problem.Part2_Binary();
+
+        [Benchmark]
         public string Part2_IntersectAll() => _problem.Part2_IntersectAll();
 
         [Benchmark]
