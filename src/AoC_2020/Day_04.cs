@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FileParser;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,7 +55,7 @@ namespace AoC_2020
 
         public Day_04()
         {
-            _input = ParseInput();
+            _input = ParseInput().ToList();
             _rawInput = File.ReadAllText(InputFilePath);
         }
 
@@ -158,36 +159,26 @@ namespace AoC_2020
             return RawFileRegex.Matches(_rawInput).Count.ToString();
         }
 
-        private List<Dictionary<string, string>> ParseInput()
+        private IEnumerable<Dictionary<string, string>> ParseInput()
         {
-            var groups = new List<Dictionary<string, string>>()
-            {
-                new Dictionary<string, string>()
-            };
-
-            int index = 0;
-            foreach (var line in File.ReadAllLines(InputFilePath))
-            {
-                if (string.IsNullOrWhiteSpace(line))
+            return ParsedFile.ReadAllGroupsOfLines(InputFilePath)
+                .Select(group =>
                 {
-                    groups.Add(new Dictionary<string, string>());
-                    ++index;
-                    continue;
-                }
+                    var dict = new Dictionary<string, string>();
 
-                foreach (var word in line.Split(' '))
-                {
-                    var pair = word.Split(':');
-                    if (groups[index].TryGetValue(pair[0], out var existingValue))
+                    foreach (var word in group.SelectMany(line => line.Split(' ')))
                     {
-                        throw new SolvingException("I wasn't expecting duplicated fields" +
-                            $"{pair[0]}: {existingValue} was about to be overriden with {pair[1]}");
+                        var pair = word.Split(':');
+                        if (dict.TryGetValue(pair[0], out var existingValue))
+                        {
+                            throw new SolvingException("I wasn't expecting duplicated fields" +
+                                $"{pair[0]}: {existingValue} was about to be overriden with {pair[1]}");
+                        }
+                        dict[pair[0]] = pair[1];
                     }
-                    groups[index][pair[0]] = pair[1];
-                }
-            }
 
-            return groups;
+                    return dict;
+                });
         }
     }
 }
