@@ -1,8 +1,6 @@
 ﻿using AoCHelper;
-using FileParser;
 using SheepTools.Extensions;
 using SheepTools.Model;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,7 +10,7 @@ namespace AoC_2020
 {
     public class Day_07 : BaseDay
     {
-        private readonly Dictionary<string, Node> _input;
+        private readonly Dictionary<string, Bag> _input;
 
         public Day_07()
         {
@@ -24,37 +22,48 @@ namespace AoC_2020
             return BagsThatCanContainABag("shiny gold")
                 .Count
                 .ToString();
-        }
 
-        private HashSet<Node> BagsThatCanContainABag(string bagId, HashSet<Node>? result = null)
-        {
-            if (result is null)
+            HashSet<Bag> BagsThatCanContainABag(string bagId, HashSet<Bag>? result = null)
             {
-                result = new HashSet<Node>();
+                if (result is null)
+                {
+                    result = new HashSet<Bag>();
+                }
+
+                foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Key.Id == bagId)))
+                {
+                    result.Add(bag);
+
+                    result.AddRange(BagsThatCanContainABag(bag.Id, result));
+                }
+
+                return result;
             }
-
-            foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Id == bagId)))
-            {
-                result.Add(bag);
-
-                result.AddRange(BagsThatCanContainABag(bag.Id, result));
-            }
-
-            return result;
         }
 
         public override string Solve_2()
         {
-            var solution = string.Empty;
+            var shinyGold = _input["shiny gold"];
+            return BagsContainedByABag(shinyGold).ToString();
 
-            return solution;
+            static long BagsContainedByABag(Bag bag)
+            {
+                long result = bag.Children.Sum(pair => pair.Value);
+
+                foreach (var child in bag.Children)
+                {
+                    result += child.Value * BagsContainedByABag(child.Key);
+                }
+
+                return result;
+            }
         }
 
-        private readonly Regex InputParsingRegex = new Regex(@"(?:(?:[\d].*?)) bag+", RegexOptions.Compiled);
+        private readonly Regex _inputParsingRegex = new Regex(@"(?:(?:[\d].*?)) bag+", RegexOptions.Compiled);
 
-        private Dictionary<string, Node> ParseInput()
+        private Dictionary<string, Bag> ParseInput()
         {
-            var result = new Dictionary<string, Node>();
+            var result = new Dictionary<string, Bag>();
 
             foreach (var line in File.ReadAllLines(InputFilePath))
             {
@@ -63,25 +72,38 @@ namespace AoC_2020
 
                 if (!result.ContainsKey(id))
                 {
-                    result.Add(id, new Node(id));
+                    result.Add(id, new Bag(id));
                 }
-                foreach (Match child in InputParsingRegex.Matches(split[1]))
+                foreach (Match child in _inputParsingRegex.Matches(split[1]))
                 {
                     var childId = child.Value.Replace("bag", "").Trim();
 
-                    var n = childId[0..childId.IndexOf(' ')];
+                    if (!int.TryParse(childId[0..childId.IndexOf(' ')], out int numberOfBags))
+                    {
+                        throw new SolvingException();
+                    }
                     childId = childId[(childId.IndexOf(' ') + 1)..];
                     if (!result.TryGetValue(childId, out var existingChild))
                     {
-                        existingChild = new Node(childId);
+                        existingChild = new Bag(childId);
                         result.Add(childId, existingChild);
                     }
-                    result[id].Children.Add(existingChild);
+                    result[id].Children.Add(existingChild, numberOfBags);
                 }
             }
 
             return result;
         }
 
+        private record Bag(string Id) : Node(Id)
+        {
+            public new Dictionary<Bag, int> Children { get; set; } = new Dictionary<Bag, int>();
+
+            public virtual bool Equals(Bag? other) => base.Equals(other);
+
+#pragma warning disable RCS1132 // Remove redundant overriding member.
+            public override int GetHashCode() => base.GetHashCode();
+#pragma warning restore RCS1132 // Remove redundant overriding member.
+        }
     }
 }
