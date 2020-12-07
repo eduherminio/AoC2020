@@ -53,7 +53,7 @@ namespace AoC_2020
             }
         }
 
-        private readonly Regex _inputParsingRegex = new Regex(@"(?:(?:[\d].*?)) bag+", RegexOptions.Compiled);
+        private readonly Regex _inputParsingRegex = new Regex(@"(?:[\d].*?) bag+", RegexOptions.Compiled);
 
         private Dictionary<string, Bag> ParseInput()
         {
@@ -62,22 +62,23 @@ namespace AoC_2020
             foreach (var line in File.ReadAllLines(InputFilePath))
             {
                 var split = line.Split("contain");
-                var id = split[0].Replace("bags", "").Trim();
 
+                var id = split[0].Replace("bags", "").Trim();
                 if (!result.ContainsKey(id))
                 {
                     result.Add(id, new Bag(id));
                 }
-                foreach (Match child in _inputParsingRegex.Matches(split[1]))
-                {
-                    var childId = child.Value.Replace("bag", "").Trim();
 
-                    if (!int.TryParse(childId[0..childId.IndexOf(' ')], out int numberOfBags))
+                foreach (Match match in _inputParsingRegex.Matches(split[1]))
+                {
+                    var child = match.Value.Replace("bag", "").Trim();
+
+                    if (!int.TryParse(child[0..child.IndexOf(' ')], out int numberOfBags))
                     {
                         throw new SolvingException();
                     }
 
-                    childId = childId[(childId.IndexOf(' ') + 1)..];
+                    var childId = child[(child.IndexOf(' ') + 1)..];
                     if (!result.TryGetValue(childId, out var existingChild))
                     {
                         existingChild = new Bag(childId);
