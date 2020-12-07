@@ -10,6 +10,7 @@ namespace AoC_2020
 {
     public class Day_07 : BaseDay
     {
+        private const string MyBagName = "shiny gold";
         private readonly Dictionary<string, Bag> _input;
 
         public Day_07()
@@ -19,21 +20,15 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            return BagsThatCanContainABag("shiny gold")
-                .Count
-                .ToString();
+            return BagsThatCanContainABag(MyBagName).Count.ToString();
 
             HashSet<Bag> BagsThatCanContainABag(string bagId, HashSet<Bag>? result = null)
             {
-                if (result is null)
-                {
-                    result = new HashSet<Bag>();
-                }
+                result ??= new HashSet<Bag>();
 
                 foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Key.Id == bagId)))
                 {
                     result.Add(bag);
-
                     result.AddRange(BagsThatCanContainABag(bag.Id, result));
                 }
 
@@ -43,8 +38,7 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var shinyGold = _input["shiny gold"];
-            return BagsContainedByABag(shinyGold).ToString();
+            return BagsContainedByABag(_input[MyBagName]).ToString();
 
             static long BagsContainedByABag(Bag bag)
             {
@@ -82,12 +76,14 @@ namespace AoC_2020
                     {
                         throw new SolvingException();
                     }
+
                     childId = childId[(childId.IndexOf(' ') + 1)..];
                     if (!result.TryGetValue(childId, out var existingChild))
                     {
                         existingChild = new Bag(childId);
                         result.Add(childId, existingChild);
                     }
+
                     result[id].Children.Add(existingChild, numberOfBags);
                 }
             }
