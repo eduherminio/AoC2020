@@ -1,4 +1,4 @@
-﻿namespace AoC_2020
+﻿namespace AoC_2020.AssemblyComputer
 {
     public record InstructionInput(long Accumulator, int InstructionPointer);
 

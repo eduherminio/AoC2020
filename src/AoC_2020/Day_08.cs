@@ -1,5 +1,9 @@
-﻿using AoCHelper;
+﻿using AoC_2020.AssemblyComputer;
+using AoCHelper;
 using FileParser;
+using SheepTools;
+using SheepTools.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,10 +20,21 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            return ExecuteInstructions(_instructions).accumulator.ToString();
+            try
+            {
+                Computer.ExecuteInstructions(_instructions);
+            }
+            catch (InfiniteLoopException e)
+            {
+                return e.LastAccumulatorValue.ToString();
+            }
+
+            throw new SolvingException();
         }
 
-        public override string Solve_2()
+        public override string Solve_2() => Part2_Bruteforce();
+
+        public string Part2_Bruteforce()
         {
             for (int index = 0; index < _instructions.Count; ++index)
             {
@@ -42,11 +57,11 @@ namespace AoC_2020
                 _instructions.Insert(index, replacement);
 
                 // Run the code
-                var (success, accumulator) = ExecuteInstructions(_instructions);
-                if (success)
+                try
                 {
-                    return accumulator.ToString();
+                    return Computer.ExecuteInstructions(_instructions).ToString();
                 }
+                catch (InfiniteLoopException) { /* Expected */ }
 
                 // Restore original instruction
                 _instructions.RemoveAt(index);
@@ -54,27 +69,6 @@ namespace AoC_2020
             }
 
             throw new SolvingException();
-        }
-
-        private static (bool success, long accumulator) ExecuteInstructions(List<AssemblyInstruction> instructions)
-        {
-            var executedInstructions = new HashSet<int>();
-
-            long accumulator = 0;
-            int instructionPointer = 0;
-            while (true)
-            {
-                if (instructionPointer >= instructions.Count)
-                {
-                    return (true, accumulator);
-                }
-                if (!executedInstructions.Add(instructionPointer))
-                {
-                    return (false, accumulator);
-                }
-
-                (accumulator, instructionPointer) = instructions[instructionPointer].Run(new InstructionInput(accumulator, instructionPointer));
-            }
         }
 
         private IEnumerable<AssemblyInstruction> ParseInput()
