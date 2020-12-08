@@ -1,6 +1,5 @@
 ﻿using AoCHelper;
 using FileParser;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,13 +21,15 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var enumerable = _instructions
-                .Select((instruction, index) => (instruction, index))
-                .Where(pair => pair.instruction.GetType() == typeof(Nop) || pair.instruction.GetType() == typeof(Jmp))
-                .ToList();
-
-            foreach (var (instruction, index) in enumerable)
+            for (int index = 0; index < _instructions.Count; ++index)
             {
+                var instruction = _instructions[index];
+
+                if (instruction is Acc)
+                {
+                    continue;
+                }
+
                 // Replace instruction with its alternative
                 AssemblyInstruction replacement = instruction switch
                 {
