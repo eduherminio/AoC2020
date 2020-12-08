@@ -1,9 +1,6 @@
 ﻿using AoC_2020.AssemblyComputer;
 using AoCHelper;
 using FileParser;
-using SheepTools;
-using SheepTools.Extensions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
