@@ -32,9 +32,7 @@ namespace AoC_2020
             throw new SolvingException();
         }
 
-        public override string Solve_2() => Part2_Bruteforce();
-
-        public string Part2_Bruteforce()
+        public override string Solve_2()
         {
             for (int index = 0; index < _instructions.Count; ++index)
             {
