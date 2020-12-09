@@ -26,7 +26,7 @@ namespace AoC_2020
         {
             long number = FirstWrongNumber(Preamble);
 
-            var set = _input.ContiguousNumbersToSumN(number);
+            var set = _input.ContiguousNumbersThatSumN(number);
 
             return $"{set.Min() + set.Max()}";
         }

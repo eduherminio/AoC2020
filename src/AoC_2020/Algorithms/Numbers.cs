@@ -64,7 +64,7 @@ namespace AoC_2020.Algorithms
             return Enumerable.Empty<long>();
         }
 
-        public static IEnumerable<long> ContiguousNumbersToSumN(this IEnumerable<long> candidates, long total)
+        public static IEnumerable<long> ContiguousNumbersThatSumN(this IEnumerable<long> candidates, long total)
         {
             var list = new List<long>();
             bool condition(long sum) => sum == total && list.Count > 1;
