@@ -68,12 +68,8 @@ namespace AoC_2020
 
         private IEnumerable<AssemblyInstruction> ParseInput()
         {
-            var file = new ParsedFile(InputFilePath);
-
-            while (!file.Empty)
+            foreach (var line in new ParsedFile(InputFilePath))
             {
-                var line = file.NextLine();
-
                 yield return line.NextElement<string>() switch
                 {
                     "acc" => new Acc(line.NextElement<int>()),
