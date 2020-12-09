@@ -1,4 +1,5 @@
-﻿using AoCHelper;
+﻿using AoC_2020.Algorithms;
+using AoCHelper;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,66 +9,27 @@ namespace AoC_2020
     public class Day_01 : BaseDay
     {
         private const int TwentyTwenty = 2020;
-        private readonly List<int> _input;
+        private readonly List<long> _input;
 
         public Day_01()
         {
-            _input = File.ReadAllLines(InputFilePath).Select(int.Parse).ToList();
+            _input = File.ReadAllLines(InputFilePath).Select(long.Parse).ToList();
         }
 
         public override string Solve_1()
         {
-            var sum = new HashSet<int>();
-            foreach (var input in _input)
-            {
-                if (input > TwentyTwenty)
-                {
-                    continue;
-                }
-
-                foreach (var n in sum)
-                {
-                    if (n + input == TwentyTwenty)
-                    {
-                        return (n * input).ToString();
-                    }
-                }
-                sum.Add(input);
-            }
-
-            throw new SolvingException();
+            return _input.PairOfNumbersThatSumN(2020)
+                .Aggregate((long)1, (total, n) => total * n)
+                .ToString();
         }
 
         public override string Solve_2() => Part2_Dictionary();
 
         internal string Part2_Dictionary()
         {
-            var existingGroups = new Dictionary<int, List<int>>();
-
-            foreach (var input in _input)
-            {
-                if (input > TwentyTwenty)
-                {
-                    continue;
-                }
-
-                var candidateGroups = existingGroups.Where(n => n.Key + input <= TwentyTwenty && n.Value.Count < 3).ToList();
-                for (int i = 0; i < candidateGroups.Count; ++i)
-                {
-                    var entry = candidateGroups[i];
-
-                    if (entry.Value.Count == 2 && entry.Value.Sum() + input == TwentyTwenty)
-                    {
-                        return (input * entry.Value[0] * entry.Value[1]).ToString();
-                    }
-
-                    existingGroups[entry.Key + input] = entry.Value.Append(input).ToList();
-                }
-
-                existingGroups[input] = new[] { input }.ToList();
-            }
-
-            throw new SolvingException();
+            return _input.MultipleNumbersThatSumN(2020, 3)
+                .Aggregate((long)1, (total, n) => total * n)
+                .ToString();
         }
 
         /// <summary>
@@ -101,7 +63,7 @@ namespace AoC_2020
         {
             return _input.Where(input1 =>
                  _input.Find(input2 => _input.Contains(TwentyTwenty - input1 - input2)) != default)
-                 .Aggregate(1, (o, c) => o * c)
+                 .Aggregate((long)1, (o, c) => o * c)
                  .ToString();
         }
 
@@ -115,7 +77,7 @@ namespace AoC_2020
         {
             return _input.DifferentCombinations(numberofItems)
                 .First(en => en.Sum() == TwentyTwenty)
-                .Aggregate(1, (total, n) => total * n)
+                .Aggregate((long)1, (total, n) => total * n)
                 .ToString();
         }
     }
