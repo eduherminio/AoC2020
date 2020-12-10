@@ -1,4 +1,6 @@
-﻿using AoCHelper;
+﻿// https://eduherminio.github.io/blog/solving-aoc-2020-day-10/
+
+using AoCHelper;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,10 +45,6 @@ namespace AoC_2020
             return $"{ones * threes}";
         }
 
-        /// <summary>
-        /// https://eduherminio.github.io/blog/solving-aoc-2020-day-10/
-        /// </summary>
-        /// <returns></returns>
         public override string Solve_2()
         {
             _descendingInput.Add(0);
@@ -73,112 +71,6 @@ namespace AoC_2020
                     ? 3 * totalNumberOfWays / 4
                     : totalNumberOfWays;
             }
-
-            return totalNumberOfWays.ToString();
-        }
-
-        /// <summary>
-        /// While iterating through the reversed input, we think of 'removing' optional adapters.
-        /// While we are removing {current}:
-        /// If both {current-1} and {current-2} have been removed, not all removals from {current-2} will be valid when removing {current}
-        /// In our case, {current+1} and {current+2}, due to _input being inverted (ordered by descending)
-        /// Example:
-        ///      46 - 47 - 48 - 49 - 52
-        ///      * We remove 48
-        ///      * We remove 47 -> 48 was also removed but 49 not
-        ///          -> else
-        ///      * We remove 46 -> 47 and 48 were also removed
-        ///          -> Those 47 'extra options' where 48 has been removed aren't valid
-        ///          -> sum += dic[47].Value - dic[48].Value
-        /// </summary>
-        /// <returns></returns>
-        public string Part2_Original()
-        {
-            int inputSize = _descendingInput.Count;
-            _descendingInput.Add(0);
-
-            ulong totalNumberOfWays = 1;
-
-            // Number of new ways that can be achieved by removing an item
-            var numberOfExtraOptionsWhenRemovingKey = new Dictionary<int, ulong>();
-
-            var previous = _descendingInput.Max() + 3;
-            int current;
-            int next;
-
-            bool isCurrentRemovable() => previous - next <= 3;
-
-            for (int i = 0; i < inputSize; i++)
-            {
-                current = _descendingInput[i];
-                next = _descendingInput[i + 1];
-
-                if (isCurrentRemovable())    // Removing current
-                {
-                    ulong newWays = 1;
-
-                    foreach (var pair in numberOfExtraOptionsWhenRemovingKey)
-                    {
-                        newWays += pair.Value;
-                        if (pair.Key == current + 1 && numberOfExtraOptionsWhenRemovingKey.TryGetValue(pair.Key + 1, out var value))
-                        {
-                            newWays -= value;
-                        }
-                    }
-
-                    totalNumberOfWays += newWays;
-                    numberOfExtraOptionsWhenRemovingKey.Add(current, newWays);
-                }
-
-                previous = current;
-            }
-
-            return totalNumberOfWays.ToString();
-        }
-
-        /// <summary>
-        /// While iterating through the reversed input, we think of the how adding an optional adapter duplicates the number of arrangements
-        /// </summary>
-        /// <returns></returns>
-        public string Part2_SlightlyDifferentApproach()
-        {
-            int inputSize = _descendingInput.Count;
-            _descendingInput.Add(0);
-
-            ulong totalNumberOfWays = 0;
-
-            // Number of new ways that can be achieved by removing an item
-            var numberOfNewWaysByRemovableItem = new Dictionary<int, ulong>();
-
-            int previous = _descendingInput.Max() + 3;
-            int current;
-            int next;
-
-            bool isCurrentRemovable() => previous - next <= 3;
-
-            for (int i = 0; i < inputSize; i++)
-            {
-                current = _descendingInput[i];
-                next = _descendingInput[i + 1];
-
-                if (isCurrentRemovable())
-                {
-                    ulong newWays = 1 + totalNumberOfWays;
-
-                    if (numberOfNewWaysByRemovableItem.ContainsKey(current + 1)
-                        && numberOfNewWaysByRemovableItem.TryGetValue(current + 2, out var duplicated))
-                    {
-                        newWays -= duplicated;
-                    }
-
-                    totalNumberOfWays += newWays;
-                    numberOfNewWaysByRemovableItem.Add(current, newWays);
-                }
-
-                previous = current;
-            }
-
-            ++totalNumberOfWays;    // Add full sequence
 
             return totalNumberOfWays.ToString();
         }
