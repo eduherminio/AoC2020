@@ -18,6 +18,7 @@ namespace AoC_2020.Test
             [InlineData(typeof(Day_07), "248", "57281")]
             [InlineData(typeof(Day_08), "1563", "767")]
             [InlineData(typeof(Day_09), "57195069", "7409241")]
+            [InlineData(typeof(Day_10), "2450", "32396521357312")]
             public void Test(Type type, string sol1, string sol2)
             {
                 var instance = Activator.CreateInstance(type) as BaseDay;
