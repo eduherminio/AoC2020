@@ -12,6 +12,8 @@ namespace AoC_2020
 
         private readonly List<long> _input;
 
+        private long _solutionPart1;
+
         public Day_09()
         {
             _input = File.ReadAllLines(InputFilePath).Select(long.Parse).ToList();
@@ -19,14 +21,17 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            return FirstWrongNumber(Preamble).ToString();
+            _solutionPart1 = FirstWrongNumber(Preamble);
+            return _solutionPart1.ToString();
         }
 
         public override string Solve_2()
         {
-            long number = FirstWrongNumber(Preamble);
+            long sum = _solutionPart1 == default
+                ? FirstWrongNumber(Preamble)
+                : _solutionPart1;
 
-            var set = _input.ContiguousNumbersThatSumN(number);
+            var set = _input.ContiguousNumbersThatSumN(sum);
 
             return $"{set.Min() + set.Max()}";
         }
