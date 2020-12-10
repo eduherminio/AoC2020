@@ -1,4 +1,6 @@
-﻿using AoCHelper;
+﻿#pragma warning disable S125 // Sections of code should not be commented out - They're not code sonar :( just explanations
+
+using AoCHelper;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -53,8 +55,8 @@ namespace AoC_2020
         {
             _input.Reverse();
 
-            var dic = new Dictionary<int, ulong>();
             ulong total = 1;
+            var numberOfExtraOptionsWhenRemovingKey = new Dictionary<int, ulong>();
 
             var previous = _input.Max() + 3;
 
@@ -65,23 +67,24 @@ namespace AoC_2020
                     ? _input[i + 1]
                     : 0;
 
-                if (previous - current == 1 && previous - next <= 3)
+                if (previous - current == 1 && previous - next <= 3)    // Removing current
                 {
                     ulong sum = 1;
 
-                    foreach (var pair in dic)
+                    foreach (var pair in numberOfExtraOptionsWhenRemovingKey)
                     {
-                        // If the previous one has been removed, and the previous-previous one as well,
-                        // not all removals from the previous one will be valid
+                        // While we are removing {current}:
+                        // If both {current-1} and {current-2} have been removed, not all removals from {current-1} will be valid when removing {current}
+                        // In our case, {current+1} and {current+2}, due to _input being inverted (ordered by descending)
                         // Example:
                         //      46 - 47 - 48 - 49 - 52
                         //      * We remove 48
                         //      * We remove 47 -> 48 was also removed but 49 not
                         //          -> else
                         //      * We remove 46 -> 47 and 48 were also removed
-                        //          -> 47 'options' where 48 has been removed aren't valid
+                        //          -> Those 47 'extra options' where 48 has been removed aren't valid
                         //          -> sum += dic[47].Value - dic[48].Value
-                        if (pair.Key == current + 1 && dic.TryGetValue(pair.Key + 1, out var value))
+                        if (pair.Key == current + 1 && numberOfExtraOptionsWhenRemovingKey.TryGetValue(pair.Key + 1, out var value))
                         {
                             sum += pair.Value - value;
                         }
@@ -92,7 +95,7 @@ namespace AoC_2020
                     }
 
                     total += sum;
-                    dic.Add(current, sum);
+                    numberOfExtraOptionsWhenRemovingKey.Add(current, sum);
                 }
 
                 previous = current;
@@ -102,3 +105,5 @@ namespace AoC_2020
         }
     }
 }
+
+#pragma warning restore S125
