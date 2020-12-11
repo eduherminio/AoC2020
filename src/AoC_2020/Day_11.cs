@@ -202,20 +202,23 @@ namespace AoC_2020
             {
                 AdjacentSeats.Clear();
 
-                AddNonDiagonalAdjacents(otherSeats);
+                AddHorizontalAndVerticalAdjacents(otherSeats);
                 AddDiagonalAdjacents(otherSeats);
 
-                void AddNonDiagonalAdjacents(HashSet<SeatingLocation> otherSeats)
+                void AddHorizontalAndVerticalAdjacents(HashSet<SeatingLocation> otherSeats)
                 {
-                    var nonDiagonalSeats = otherSeats.Where(seat => seat.X == X ^ seat.Y == Y);
-
                     SeatingLocation? left = null;
                     SeatingLocation? right = null;
                     SeatingLocation? top = null;
                     SeatingLocation? bottom = null;
 
-                    foreach (var seat in nonDiagonalSeats)
+                    foreach (var seat in otherSeats)
                     {
+                        if (seat.X == X && seat.Y == Y)
+                        {
+                            continue;
+                        }
+
                         if (seat.X == X)    // Vertical
                         {
                             if (seat.Y < Y)
@@ -233,7 +236,7 @@ namespace AoC_2020
                                 }
                             }
                         }
-                        else    // Horizontal
+                        else if (seat.Y == Y)   // Horizontal
                         {
                             if (seat.X < X)
                             {
@@ -259,52 +262,52 @@ namespace AoC_2020
 
                 void AddDiagonalAdjacents(HashSet<SeatingLocation> otherSeats)
                 {
-                    var diagonalSeats = otherSeats.Where(seat =>
-                    {
-                        var dx = Math.Abs(X - seat.X);
-                        var dy = Math.Abs(Y - seat.Y);
-
-                        return dx == dy && X != seat.X && Y != seat.Y;
-                    });
-
                     SeatingLocation? topLeft = null;
                     SeatingLocation? topRight = null;
                     SeatingLocation? bottomLeft = null;
                     SeatingLocation? bottomRight = null;
 
-                    foreach (var diagonal in diagonalSeats)
+                    foreach (var seat in otherSeats)
                     {
-                        if (diagonal.X < X)
+                        var dx = Math.Abs(X - seat.X);
+                        var dy = Math.Abs(Y - seat.Y);
+
+                        if (dx != dy || (X == seat.X && Y == seat.Y))
                         {
-                            if (diagonal.Y < Y)
+                            continue;
+                        }
+
+                        if (seat.X < X)
+                        {
+                            if (seat.Y < Y)
                             {
-                                if (diagonal.X > topLeft?.X || topLeft is null)
+                                if (seat.X > topLeft?.X || topLeft is null)
                                 {
-                                    topLeft = diagonal;
+                                    topLeft = seat;
                                 }
                             }
                             else
                             {
-                                if (diagonal.X > bottomLeft?.X || bottomLeft is null)
+                                if (seat.X > bottomLeft?.X || bottomLeft is null)
                                 {
-                                    bottomLeft = diagonal;
+                                    bottomLeft = seat;
                                 }
                             }
                         }
                         else
                         {
-                            if (diagonal.Y < Y)
+                            if (seat.Y < Y)
                             {
-                                if (diagonal.X < topRight?.X || topRight is null)
+                                if (seat.X < topRight?.X || topRight is null)
                                 {
-                                    topRight = diagonal;
+                                    topRight = seat;
                                 }
                             }
                             else
                             {
-                                if (diagonal.X < bottomRight?.X || bottomRight is null)
+                                if (seat.X < bottomRight?.X || bottomRight is null)
                                 {
-                                    bottomRight = diagonal;
+                                    bottomRight = seat;
                                 }
                             }
                         }
