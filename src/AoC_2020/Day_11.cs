@@ -1,5 +1,4 @@
 ﻿using AoCHelper;
-using FileParser;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -10,48 +9,25 @@ namespace AoC_2020
 {
     public class Day_11 : BaseDay
     {
-        private SeatingSystem _system;
-
-        public Day_11()
-        {
-            _system = ParseInput();
-        }
-
         public override string Solve_1()
         {
-            return "";
+            var system = new SeatingSystem(true, ParseInput().ToList());
 
-            var rounds = 0;
+            while (system.Mutate()) { /*_system.Print();*/ }
 
-            Console.Clear(); _system.Print();
-            while (_system.Mutate())
-            {
-                _system.Print();
-
-                ++rounds;
-                Console.WriteLine(rounds);
-            }
-
-            return _system.OccupiedSeats.ToString();
+            return system.OccupiedSeats.ToString();
         }
 
         public override string Solve_2()
         {
-            var rounds = 0;
+            var system = new SeatingSystem(false, ParseInput().ToList());
 
-            Console.Clear(); _system.Print();
-            while (_system.Mutate())
-            {
-                _system.Print();
+            while (system.Mutate()) { /*_system.Print();*/ }
 
-                ++rounds;
-                Console.WriteLine(rounds);
-            }
-
-            return _system.OccupiedSeats.ToString();
+            return system.OccupiedSeats.ToString();
         }
 
-        private SeatingSystem ParseInput()
+        private IEnumerable<SeatingLocation> ParseInput()
         {
             static SeatingStatus GetSeatingStatus(char ch) => ch switch
             {
@@ -61,61 +37,44 @@ namespace AoC_2020
                 _ => throw new SolvingException()
             };
 
-            static IEnumerable<SeatingLocation> ParseSeatingLocations(string inputFilePath)
+            var lines = File.ReadAllLines(InputFilePath);
+            for (int y = 0; y < lines.Length; y++)
             {
-                var lines = File.ReadAllLines(inputFilePath);
-                for (int y = 0; y < lines.Length; y++)
+                for (int x = 0; x < lines[y].Length; x++)
                 {
-                    for (int x = 0; x < lines[y].Length; x++)
-                    {
-                        yield return new SeatingLocation(x, y, GetSeatingStatus(lines[y][x]));
-                    }
+                    yield return new SeatingLocation(x, y, GetSeatingStatus(lines[y][x]));
                 }
             }
-
-            return new SeatingSystem(ParseSeatingLocations(InputFilePath).ToList());
         }
 
         public class SeatingSystem
         {
-            private readonly HashSet<SeatingLocation> _floorLocations;
+            private readonly bool _isPart1;
             private readonly HashSet<SeatingLocation> _seatingLocations;
+
             public int OccupiedSeats => _seatingLocations.Count(l => l.Status == SeatingStatus.Occupied);
 
-            public SeatingLocation? this[int x, int y]
+            public SeatingSystem(bool isPart1, List<SeatingLocation> seatingLocations)
             {
-                get { return _seatingLocations.SingleOrDefault(location => location.X == x && location.Y == y); }
-            }
+                _isPart1 = isPart1;
+                _seatingLocations = seatingLocations.Where(location => location.Status != SeatingStatus.Floor).ToHashSet();
 
-            public SeatingSystem(ICollection<SeatingLocation> seatingLocations)
-            {
-                _floorLocations = seatingLocations.Where(location => location.Status == SeatingStatus.Floor).ToHashSet();
-                _seatingLocations = seatingLocations.Except(_floorLocations).ToHashSet();
-
-                // Part 1
                 foreach (var seat in _seatingLocations)
                 {
-                    seat.AdjacentLocationIndexesPart1().ForEach(pair =>
+                    if (_isPart1)
                     {
-                        var adjacent = this[pair.x, pair.y];
-                        if (adjacent is not null)
-                        {
-                            seat.AdjacentSeats.Add(adjacent);
-                        }
-                    });
-                }
-
-                // Part 2
-
-                foreach (var seat in _seatingLocations)
-                {
-                    seat.SetAdjacentLocations(_seatingLocations);
+                        seat.SetAdjacentLocations_Part1(_seatingLocations);
+                    }
+                    else
+                    {
+                        seat.SetAdjacentLocations_Part2(_seatingLocations);
+                    }
                 }
             }
 
             public bool Mutate()
             {
-                var plannedMutations = _seatingLocations.Where(seat => seat.PlanMutation())
+                var plannedMutations = _seatingLocations.Where(seat => seat.PlanMutation(_isPart1))
                     .ToList();   // Relevant .ToList(), to make sure all planning happens here.
 
                 if (plannedMutations.Count > 0)
@@ -127,22 +86,23 @@ namespace AoC_2020
                 return false;
             }
 
-            public static int Offset = 0;
-            public void Print()
-            {
-                foreach (var seat in _floorLocations.Union(_seatingLocations))
-                {
-                    Console.CursorLeft = seat.X;
-                    Console.CursorTop = seat.Y + Offset;
-                    Console.Write(seat.Status switch
-                    {
-                        SeatingStatus.Floor => '.',
-                        SeatingStatus.Empty => 'L',
-                        SeatingStatus.Occupied => '#'
-                    });
-                }
-                Offset += 15;
-            }
+            //public static int Offset = 0;
+            //public void Print()
+            //{
+            //    foreach (var seat in _floorLocations.Union(_seatingLocations))
+            //    {
+            //        Console.CursorLeft = seat.X;
+            //        Console.CursorTop = seat.Y + Offset;
+            //        Console.Write(seat.Status switch
+            //        {
+            //            SeatingStatus.Floor => '.',
+            //            SeatingStatus.Empty => 'L',
+            //            SeatingStatus.Occupied => '#',
+            //            _ => throw new SolvingException()
+            //        });
+            //    }
+            //    Offset += 15;
+            //}
         }
 
         public enum SeatingStatus { Floor, Empty, Occupied };
@@ -156,18 +116,6 @@ namespace AoC_2020
             public SeatingStatus Status { get; set; }
             public IList<SeatingLocation> AdjacentSeats { get; }
 
-            public IReadOnlyList<(int x, int y)> AdjacentLocationIndexesPart1() => new List<(int, int)>
-            {
-                (X + 1, Y),
-                (X - 1, Y),
-                (X, Y + 1),
-                (X, Y - 1),
-                (X + 1, Y + 1),
-                (X + 1, Y - 1),
-                (X - 1, Y + 1),
-                (X - 1, Y - 1)
-            };
-
             public SeatingLocation(int x, int y, SeatingStatus status)
             {
                 X = x;
@@ -177,14 +125,13 @@ namespace AoC_2020
                 AdjacentSeats = new List<SeatingLocation>();
             }
 
-            public bool PlanMutation()
+            public bool PlanMutation(bool isPart1)
             {
                 if (Status == SeatingStatus.Empty && !AdjacentSeats.Any(s => s.Status == SeatingStatus.Occupied))
                 {
                     _next = SeatingStatus.Occupied;
                 }
-                //else if (Status == SeatingStatus.Occupied && AdjacentSeats.Count(s => s.Status == SeatingStatus.Occupied) >= 4) // Part 1
-                else if (Status == SeatingStatus.Occupied && AdjacentSeats.Count(s => s.Status == SeatingStatus.Occupied) >= 5) // Part 2
+                else if (Status == SeatingStatus.Occupied && AdjacentSeats.Count(s => s.Status == SeatingStatus.Occupied) >= (isPart1 ? 4 : 5))
                 {
                     _next = SeatingStatus.Empty;
                 }
@@ -198,7 +145,31 @@ namespace AoC_2020
                 _next = null;
             }
 
-            public void SetAdjacentLocations(HashSet<SeatingLocation> otherSeats)
+            private IReadOnlyList<(int x, int y)> AdjacentLocationIndexesPart1() => new List<(int, int)>
+            {
+                (X + 1, Y),
+                (X - 1, Y),
+                (X, Y + 1),
+                (X, Y - 1),
+                (X + 1, Y + 1),
+                (X + 1, Y - 1),
+                (X - 1, Y + 1),
+                (X - 1, Y - 1)
+            };
+
+            public void SetAdjacentLocations_Part1(HashSet<SeatingLocation> otherSeats)
+            {
+                AdjacentLocationIndexesPart1().ForEach(pair =>
+                {
+                    var adjacent = otherSeats.SingleOrDefault(s => s.X == pair.x && s.Y == pair.y);
+                    if (adjacent is not null)
+                    {
+                        AdjacentSeats.Add(adjacent);
+                    }
+                });
+            }
+
+            public void SetAdjacentLocations_Part2(HashSet<SeatingLocation> otherSeats)
             {
                 AddNonDiagonalAdjacents(otherSeats);
 
@@ -273,8 +244,6 @@ namespace AoC_2020
 
                     foreach (var diagonal in diagonalSeats)
                     {
-                        var dx = Math.Abs(X - diagonal.X);
-
                         if (diagonal.X < X)
                         {
                             if (diagonal.Y < Y)
