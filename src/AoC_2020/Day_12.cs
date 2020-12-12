@@ -33,9 +33,9 @@ namespace AoC_2020
             [ShipAction.Left] = (ins, state, waypoint) => (state, waypoint.Move(Direction.Left, ins.Value)),
             [ShipAction.Right] = (ins, state, waypoint) => (state, waypoint.Move(Direction.Right, ins.Value)),
 
-            [ShipAction.TurnLeft] = (_, state, waypoint) => (state, Rotate(state, waypoint, 0.5 * Math.PI)),
-            [ShipAction.TurnRight] = (_, state, waypoint) => (state, Rotate(state, waypoint, -0.5 * Math.PI)),
-            [ShipAction.Turn180] = (_, state, waypoint) => (state, Rotate(state, waypoint, Math.PI)),
+            [ShipAction.TurnLeft] = (_, state, waypoint) => (state, waypoint.RotateCounterclockwise(state, 90, isRadians: false)),
+            [ShipAction.TurnRight] = (_, state, waypoint) => (state, waypoint.RotateClockwise(state, 90, isRadians: false)),
+            [ShipAction.Turn180] = (_, state, waypoint) => (state, waypoint.RotateClockwise(state, 180, isRadians: false)),
             [ShipAction.KeepMovin] = (ins, state, waypoint) => (
                 new Point(
                     state.X + (ins.Value * (waypoint.X - state.X)),
@@ -44,20 +44,6 @@ namespace AoC_2020
                     waypoint.X + (ins.Value * (waypoint.X - state.X)),
                     waypoint.Y + (ins.Value * (waypoint.Y - state.Y))))
         };
-
-        public static Point Rotate(Point origin, Point point, double angle)
-        {
-            var sinAngle = Math.Sin(angle);
-            var cosAngle = Math.Cos(angle);
-
-            return new Point(
-                x: (cosAngle * (point.X - origin.X))
-                    - (sinAngle * (point.Y - origin.Y))
-                    + origin.X,
-                y: (sinAngle * (point.X - origin.X))
-                    + (cosAngle * (point.Y - origin.Y))
-                    + origin.Y);
-        }
 
         public Day_12()
         {

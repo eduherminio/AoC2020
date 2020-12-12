@@ -10,11 +10,11 @@
     <PackageReference Include="AoCHelper" Version="0.14.0" />
     <PackageReference Include="FileParser" Version="2.1.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
-    <PackageReference Include="SheepTools" Version="0.8.0" />
+    <PackageReference Include="SheepTools" Version="0.9.0" />
   </ItemGroup>
 
   <PropertyGroup>
-    <NoWarn>S101</NoWarn>
+    <NoWarn>S101;S125</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
