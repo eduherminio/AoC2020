@@ -37,13 +37,14 @@ namespace AoC_2020
             [ShipAction.TurnRight] = (_, ship, waypoint) => (ship, waypoint.RotateClockwise(ship, 90, isRadians: false)),
             [ShipAction.Turn180] = (_, ship, waypoint) => (ship, waypoint.RotateClockwise(ship, 180, isRadians: false)),
 
-            [ShipAction.KeepMovin] = (ins, ship, waypoint) => (
-                new Point(
-                    ship.X + (ins.Value * (waypoint.X - ship.X)),
-                    ship.Y + (ins.Value * (waypoint.Y - ship.Y))),
-                new Point(
-                    waypoint.X + (ins.Value * (waypoint.X - ship.X)),
-                    waypoint.Y + (ins.Value * (waypoint.Y - ship.Y))))
+            [ShipAction.KeepMovin] = (ins, ship, waypoint) =>
+            {
+                var xIncrement = ins.Value * (waypoint.X - ship.X);
+                var yIncrement = ins.Value * (waypoint.Y - ship.Y);
+
+                return (new Point(ship.X + xIncrement, ship.Y + yIncrement),
+                        new Point(waypoint.X + xIncrement, waypoint.Y + yIncrement));
+            }
         };
 
         public Day_12()
