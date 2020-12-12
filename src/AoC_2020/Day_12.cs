@@ -12,7 +12,7 @@ namespace AoC_2020
     {
         private readonly List<Instruction> _instructions;
 
-        private static readonly Dictionary<ShipAction, Func<Instruction, (Point Position, Direction Direction), (Point, Direction)>> Movements = new()
+        private static readonly Dictionary<ShipAction, Func<Instruction, (IntPoint Position, Direction Direction), (IntPoint, Direction)>> Movements = new()
         {
             [ShipAction.Down] = (ins, state) => (state.Position.Move(Direction.Down, ins.Value), state.Direction),
             [ShipAction.Up] = (ins, state) => (state.Position.Move(Direction.Up, ins.Value), state.Direction),
@@ -26,7 +26,7 @@ namespace AoC_2020
             [ShipAction.KeepMovin] = (ins, state) => (state.Position.Move(state.Direction, ins.Value), state.Direction)
         };
 
-        private static readonly Dictionary<ShipAction, Func<Instruction, Point, Point, (Point ship, Point waypoint)>> MovementsPart2 = new()
+        private static readonly Dictionary<ShipAction, Func<Instruction, IntPoint, IntPoint, (IntPoint ship, IntPoint waypoint)>> MovementsPart2 = new()
         {
             [ShipAction.Down] = (ins, ship, waypoint) => (ship, waypoint.Move(Direction.Down, ins.Value)),
             [ShipAction.Up] = (ins, ship, waypoint) => (ship, waypoint.Move(Direction.Up, ins.Value)),
@@ -42,8 +42,8 @@ namespace AoC_2020
                 var xIncrement = ins.Value * (waypoint.X - ship.X);
                 var yIncrement = ins.Value * (waypoint.Y - ship.Y);
 
-                return (new Point(ship.X + xIncrement, ship.Y + yIncrement),
-                        new Point(waypoint.X + xIncrement, waypoint.Y + yIncrement));
+                return (new IntPoint(ship.X + xIncrement, ship.Y + yIncrement),
+                        new IntPoint(waypoint.X + xIncrement, waypoint.Y + yIncrement));
             }
         };
 
@@ -54,7 +54,7 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            var initialState = (Position: new Point(0, 0), Direction: Direction.Right);
+            var initialState = (Position: new IntPoint(0, 0), Direction: Direction.Right);
             var shipState = initialState;
 
             foreach (var instruction in _instructions)
@@ -67,8 +67,8 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var initialShipPosition = new Point(0, 0);
-            var initialWaypoint = new Point(10, 1);
+            var initialShipPosition = new IntPoint(0, 0);
+            var initialWaypoint = new IntPoint(10, 1);
 
             var shipPosition = initialShipPosition;
             var waypoint = initialWaypoint;
