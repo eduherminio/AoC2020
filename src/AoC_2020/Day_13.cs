@@ -1,5 +1,4 @@
 ﻿using AoCHelper;
-using FileParser;
 using SheepTools;
 using System;
 using System.Collections.Generic;
@@ -41,52 +40,21 @@ namespace AoC_2020
 
         public override string Solve_2() => Part2_Bruteforce_SingleThread();
 
-        public string Solve_2_Wink(long offset)
+        public string Solve_2_Wink(long offset, long limit = 100000000000000)
         {
-            var hardRequirements = _busFrequency
-                .Select((freq, index) => (freq, index))
-                .Where(pair => pair.freq != long.MaxValue)
-                .ToList();
+            var requirements = ExtractRequirements();
 
-            // [A, X] && [Y, A] => [X * Y, A]
-            var redundantRequirements = new List<(long, int)>();
-            var newRequirements = new List<(long, int)>();
+            var max = requirements[0].freq;
+            var maxIndex = requirements[0].index;
 
-            foreach (var req in hardRequirements)
-            {
-                var other = hardRequirements
-                    .Except(new[] { req })
-                    .Where(req2 => req2.index != 0 && (long)req2.index % req.freq == 0)
-                    .ToList();
-
-                if (other.Any())
-                {
-                    other.Add(req);
-                    redundantRequirements.AddRange(other);
-
-                    var newIndex = other.Max(req => req.index);
-                    var newFrequency = other.Aggregate((long)1, (total, current) => total * current.freq);
-
-                    newRequirements.Add((newFrequency, newIndex));
-                }
-            }
-
-            var reducedHardRequirements = hardRequirements
-                .Except(redundantRequirements)
-                .Concat(newRequirements)
-                .OrderByDescending(req => req.Item1)
-                .ToList();
-
-            var max = reducedHardRequirements[0].Item1;
-            var maxIndex = reducedHardRequirements[0].Item2;
-
-            var finalRequirements = reducedHardRequirements
+            var finalRequirements = requirements
                 .Skip(1)
-                .Select(pair => (freq: pair.Item1, index: pair.Item2 - maxIndex))
+                .Select(pair => (pair.freq, index: pair.index - maxIndex))
+                .OrderByDescending(req => req.freq)
                 .ToList();
 
             //return CalculateSimple(max, maxIndex, finalRequirements);
-            var result = Calculate(1, finalRequirements, max, offset).ToString();
+            var result = Calculate(1, finalRequirements, max, offset, limit).ToString();
 
             File.WriteAllText($"./{result}", result);
             return result;
@@ -98,19 +66,29 @@ namespace AoC_2020
         /// <returns></returns>
         public string Part2_Bruteforce_SingleThread()
         {
-            List<(long, int)> reducedHardRequirements = ExtractRequirements();
+            var requirements = ExtractRequirements();
 
-            var max = reducedHardRequirements[0].Item1;
-            var maxIndex = reducedHardRequirements[0].Item2;
+            var max = requirements[0].freq;
+            var maxIndex = requirements[0].index;
 
-            var finalRequirements = reducedHardRequirements
-                .Skip(1)
-                .Select(pair => (freq: pair.Item1, index: pair.Item2 - maxIndex))
+            var finalRequirements = requirements
+                .Skip(1)    // Micro-optimization #2: no need to check the step
+                .Select(pair => (pair.freq, index: pair.index - maxIndex))
+                .OrderByDescending(req => req.freq) // Micro-optimization #3: fail as fast as possible
                 .ToList();
 
-            return Calculate((long)1, finalRequirements, max).ToString();
+            var lcm = Convert.ToInt64(requirements.Select(req => (ulong)req.freq).LeastCommonMultiple());
+
+            return Calculate((long)1, finalRequirements, max, limit: lcm + 1).ToString();
         }
 
+        /// <summary>
+        /// Micro-optimization #1
+        /// [f: A, i: X] && [f: B, i: A] => [f: A * B, i: A]
+        /// Example:
+        /// [f: 7, i: 0] && [f: 19, i: 7] => [f: 7 * 19, i:7]
+        /// </summary>
+        /// <returns></returns>
         private List<(long freq, int index)> ExtractRequirements()
         {
             var hardRequirements = _busFrequency
@@ -118,7 +96,6 @@ namespace AoC_2020
                 .Where(pair => pair.freq != long.MaxValue)
                 .ToList();
 
-            // [A, X] && [Y, A] => [X * Y, A]
             var redundantRequirements = new List<(long, int)>();
             var newRequirements = new List<(long, int)>();
 
@@ -129,7 +106,7 @@ namespace AoC_2020
                     .Where(req2 => req2.index != 0 && (long)req2.index % req.freq == 0)
                     .ToList();
 
-                if (other.Any())
+                if (other.Count > 0)
                 {
                     other.Add(req);
                     redundantRequirements.AddRange(other);
@@ -144,7 +121,6 @@ namespace AoC_2020
             return hardRequirements
                 .Except(redundantRequirements)
                 .Concat(newRequirements)
-                .OrderByDescending(req => req.Item1)
                 .ToList();
         }
 
@@ -161,14 +137,14 @@ namespace AoC_2020
 
             var finalRequirements = requirements
                 .Skip(1)
-                .Select(pair => (freq: pair.Item1, index: pair.Item2 - maxIndex))
+                .Select(pair => (pair.freq, index: pair.index - maxIndex))
                 .ToList();
 
             var lcm = Convert.ToInt64(requirements.Select(req => (ulong)req.freq).LeastCommonMultiple());
 
             var taskList = new List<Task<long>>();
 
-            var primes = GetPrimeNumbers(Convert.ToInt32(max)).ToList();
+            var primes = GetPrimeNumbers(max).ToList();
             foreach (var prime in primes)
             {
                 taskList.Add(Task.Run(() =>
@@ -186,9 +162,7 @@ namespace AoC_2020
             return $"{result.Min() - (long)maxIndex}";
         }
 
-        //private long Max = 2029817890655789;
-        private long Max = 100000000000000;
-        private long Calculate(long n, List<(long freq, int index)> hardRequirements, long max, long offset = 0)
+        private static long Calculate(long n, List<(long freq, int index)> hardRequirements, long max, long offset = 0, long limit = 100000000000000)
         {
             var increment = max * n;
             var start = (long)0;
@@ -219,34 +193,66 @@ namespace AoC_2020
                 // Monitoring
                 if (t - offset >= 10 * prevPrintedT)
                 {
-
-                    Console.WriteLine($"Task {n:D3}:\t[{n_prevPrintedT:D2}]: {0.001 * sw.ElapsedMilliseconds:F2}s\t-->\t{t}");
+                    if (t > limit) { return -1; }
                     prevPrintedT = t - offset;
+
                     ++n_prevPrintedT;
-                    if (t > Interlocked.Read(ref Max)) { return -1; }
+                    Console.WriteLine($"Task {n:D3}:\t[{n_prevPrintedT:D2}]: {0.001 * sw.ElapsedMilliseconds:F2}s\t-->\t{t}");
                 }
                 // Monitoring end
 
-                if (hardRequirements.Any(req =>
-                {
-                    var realIndex = t + req.index;
-
-                    return realIndex % req.freq != 0;
-                }))
+                if (hardRequirements.Any(req => (t + req.index) % req.freq != 0))
                 {
                     t += increment;
-                    continue;
                 }
-
-                Console.WriteLine("********************************" + t + "********************************");
-                if (t < Interlocked.Read(ref Max))
+                else
                 {
-                    Interlocked.Exchange(ref Max, t);
                     return t;
                 }
-
-                return long.MaxValue;
             }
+        }
+
+        /// <summary>
+        /// Solution by @JavierLight (https://gist.github.com/JavierLight/660bdef0b5694d48d7d6fa1e9f559eea)
+        /// </summary>
+        /// <returns></returns>
+        public string Part2_JavierLight()
+        {
+            var busOffsetsDictionary = new Dictionary<int, long>();
+            int minutesOffset = 0;
+            foreach (var busId in _busFrequency)
+            {
+                if (busId != -1)
+                {
+                    busOffsetsDictionary.Add(minutesOffset, busId);
+                }
+                minutesOffset++;
+            }
+
+            long timestamp = 0;
+            long leastCommon = busOffsetsDictionary.First().Value;
+
+            // Tried brute force first, step size was too small and was getting forever :S
+            // All ids are prime, so the least common can be accumulated!
+            // Until the next timestamp is found, by using the same timestamp as step size we can assume all previous conditions are met (kind of a memoization)
+            foreach (var busOffsetKvp in busOffsetsDictionary.Skip(1))
+            {
+                var offset = busOffsetKvp.Value;
+                bool foundNewCommon = false;
+
+                while (!foundNewCommon)
+                {
+                    timestamp += leastCommon;
+                    // Instead of checking that all offsets match, let's go one by one, accumulating the least common to speed up processing
+                    if ((timestamp + busOffsetKvp.Key) % busOffsetKvp.Value == 0)
+                    {
+                        leastCommon *= offset;
+                        foundNewCommon = true;
+                    }
+                }
+            }
+
+            return timestamp.ToString();
         }
 
         private (long, List<long>) ParseInput()
@@ -254,26 +260,44 @@ namespace AoC_2020
             var lines = File.ReadAllLines(InputFilePath);
 
             var min = long.Parse(lines[0]);
-            var frequencies = lines[1].Replace("x", $"{long.MaxValue}").Split(',').Select(long.Parse);
+            var frequencies = lines[1].Replace("x", $"{-1}").Split(',').Select(long.Parse);
 
             return (min, frequencies.ToList());
         }
 
-        private IEnumerable<long> GetPrimeNumbers(int n)
+        /// <summary>
+        /// https://davidsekar.com/algorithms/sieve-of-eratosthenes-prime
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        private static IEnumerable<long> GetPrimeNumbers(long n)
         {
             bool[] prime = new bool[n + 1];
-            for (int i = 2; i <= n; i++) prime[i] = true;
+            for (long i = 2; i <= n; i++)
+            {
+                prime[i] = true;
+            }
 
-            int limit = (int)Math.Ceiling(Math.Sqrt(n));
+            long limit = (int)Math.Ceiling(Math.Sqrt(n));
 
-            for (int i = 2; i <= limit; i++)
+            for (long i = 2; i <= limit; i++)
+            {
                 if (prime[i])
-                    for (int j = i * i; j <= n; j += i)
+                {
+                    for (long j = i * i; j <= n; j += i)
+                    {
                         prime[j] = false;
+                    }
+                }
+            }
 
-            for (int i = 0; i <= n; i++)
+            for (long i = 0; i <= n; i++)
+            {
                 if (prime[i])
-                    yield return (long)i;
+                {
+                    yield return i;
+                }
+            }
         }
     }
 }
