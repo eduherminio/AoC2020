@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+
 using SheepTools;
 using System;
 using System.Collections.Generic;
@@ -77,9 +78,10 @@ namespace AoC_2020
                 .OrderByDescending(req => req.freq) // Micro-optimization #3: fail as fast as possible
                 .ToList();
 
-            var lcm = Convert.ToInt64(requirements.Select(req => (ulong)req.freq).LeastCommonMultiple());
+            var lcm = requirements.Select(req => (ulong)req.freq).LeastCommonMultiple();
+            var longLimit = lcm > (ulong)long.MaxValue ? long.MaxValue : Convert.ToInt64(lcm);
 
-            return Calculate((long)1, finalRequirements, max, limit: lcm + 1).ToString();
+            return Calculate(1, finalRequirements, max, limit: longLimit).ToString();
         }
 
         /// <summary>
@@ -162,7 +164,7 @@ namespace AoC_2020
             return $"{result.Min() - (long)maxIndex}";
         }
 
-        private static long Calculate(long n, List<(long freq, int index)> hardRequirements, long max, long offset = 0, long limit = 100000000000000)
+        private static long Calculate(long n, List<(long freq, int index)> hardRequirements, long max, long offset = 0, long limit = long.MaxValue)
         {
             var increment = max * n;
             var start = (long)0;
@@ -193,7 +195,7 @@ namespace AoC_2020
                 // Monitoring
                 if (t - offset >= 10 * prevPrintedT)
                 {
-                    if (t > limit) { return -1; }
+                    if (t >= limit) { return -1; }
                     prevPrintedT = t - offset;
 
                     ++n_prevPrintedT;
