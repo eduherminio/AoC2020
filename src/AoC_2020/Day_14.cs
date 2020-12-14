@@ -105,9 +105,10 @@ namespace AoC_2020
                         case 'X':
                             foreach (var possibleAddress in possibleAddressList)
                             {
+                                var existingStr = possibleAddress.ToString();
                                 toAdd.AddRange(new[] {
-                                    new StringBuilder(possibleAddress.ToString()).Append('0'),
-                                    new StringBuilder(possibleAddress.ToString()).Append('1') });
+                                    new StringBuilder(existingStr).Append('0'),
+                                    new StringBuilder(existingStr).Append('1') });
                                 toRemove.Add(possibleAddress);
                             }
                             break;
