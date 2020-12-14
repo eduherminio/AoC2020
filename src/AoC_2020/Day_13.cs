@@ -159,6 +159,7 @@ namespace AoC_2020
 
         /// <summary>
         /// Solution by @JavierLight (https://gist.github.com/JavierLight/660bdef0b5694d48d7d6fa1e9f559eea)
+        /// Visualization: https://streamable.com/tojflp
         /// </summary>
         /// <returns></returns>
         public string Part2_JavierLight()
@@ -202,6 +203,7 @@ namespace AoC_2020
 
         /// <summary>
         /// Solution by @mariomka (https://github.com/mariomka/AdventOfCode2020/blob/master/day13/src/lib.rs)
+        /// Visualization: https://streamable.com/tojflp
         /// </summary>
         /// <returns></returns>
         public string Part2_mariomka()
