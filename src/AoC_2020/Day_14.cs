@@ -93,32 +93,25 @@ namespace AoC_2020
 
                 possibleAddressList.AddRange(address[0] == 'X'
                     ? new[] { new StringBuilder("0"), new StringBuilder("1") }
-                    : new[] { new StringBuilder($"{address[0]}") });        // Convert char to string!
+                    : new[] { new StringBuilder(address[0..1]) });              // Make sure not to use char in SB constructor!
 
                 foreach (var ch in address.Skip(1))
                 {
-                    var toAdd = new List<StringBuilder>();
-                    var toRemove = new List<StringBuilder>();
-
                     switch (ch)
                     {
                         case 'X':
+                            var toAdd = new List<StringBuilder>(possibleAddressList.Count);
                             foreach (var possibleAddress in possibleAddressList)
                             {
-                                var existingStr = possibleAddress.ToString();
-                                toAdd.AddRange(new[] {
-                                    new StringBuilder(existingStr).Append('0'),
-                                    new StringBuilder(existingStr).Append('1') });
-                                toRemove.Add(possibleAddress);
+                                toAdd.Add(new StringBuilder(possibleAddress.ToString()).Append('1'));
+                                possibleAddress.Append('0');
                             }
+                            possibleAddressList.AddRange(toAdd);
                             break;
                         default:
                             possibleAddressList.ForEach(add => add.Append(ch));
                             break;
                     }
-
-                    toAdd.ForEach(sb => possibleAddressList.Add(sb));
-                    toRemove.ForEach(sb => possibleAddressList.Remove(sb));
                 }
 
                 return possibleAddressList.Select(sb => Convert.ToInt64(sb.ToString(), 2)).ToList();
