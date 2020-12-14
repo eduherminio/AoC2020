@@ -91,11 +91,11 @@ namespace AoC_2020
             {
                 var possibleAddressList = new HashSet<StringBuilder>();
 
-                possibleAddressList.AddRange(address.Last() == 'X'
+                possibleAddressList.AddRange(address[0] == 'X'
                     ? new[] { new StringBuilder("0"), new StringBuilder("1") }
-                    : new[] { new StringBuilder($"{address.Last()}") });        // Convert char to string!
+                    : new[] { new StringBuilder($"{address[0]}") });        // Convert char to string!
 
-                foreach (var ch in address.Reverse().Skip(1))
+                foreach (var ch in address.Skip(1))
                 {
                     var toAdd = new List<StringBuilder>();
                     var toRemove = new List<StringBuilder>();
@@ -121,7 +121,7 @@ namespace AoC_2020
                     toRemove.ForEach(sb => possibleAddressList.Remove(sb));
                 }
 
-                return possibleAddressList.Select(sb => Convert.ToInt64(string.Join(string.Empty, sb.ToString().Reverse()), 2)).ToList();
+                return possibleAddressList.Select(sb => Convert.ToInt64(sb.ToString(), 2)).ToList();
             }
         }
 
