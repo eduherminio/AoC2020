@@ -87,33 +87,33 @@ namespace AoC_2020
                 return string.Join("", result);
             }
 
+            // Replacing string with StringBuilder makes very little difference, so sticking with the simplest
             static ICollection<long> DecodeAddress(string address)
             {
-                var possibleAddressList = new HashSet<StringBuilder>();
+                var possibleAddressList = new List<string>();
 
                 possibleAddressList.AddRange(address.Last() == 'X'
-                    ? new[] { new StringBuilder("0"), new StringBuilder("1") }
-                    : new[] { new StringBuilder($"{address.Last()}") });        // Convert char to string!
+                    ? new[] { "0", "1" }
+                    : new[] { $"{address.Last()}" });        // Convert char to string!
 
                 foreach (var ch in address.Reverse().Skip(1))
                 {
-                    var toAdd = new List<StringBuilder>();
-                    var toRemove = new List<StringBuilder>();
+                    var toAdd = new List<string>();
+                    var toRemove = new List<string>();
 
                     switch (ch)
                     {
                         case 'X':
                             foreach (var possibleAddress in possibleAddressList)
                             {
-                                var existingStr = possibleAddress.ToString();
                                 toAdd.AddRange(new[] {
-                                    new StringBuilder(existingStr).Append('0'),
-                                    new StringBuilder(existingStr).Append('1') });
+                                    possibleAddress + '0',
+                                    possibleAddress + '1'});
                                 toRemove.Add(possibleAddress);
                             }
                             break;
                         default:
-                            possibleAddressList.ForEach(add => add.Append(ch));
+                            possibleAddressList = possibleAddressList.ConvertAll(add => add + ch);
                             break;
                     }
 
@@ -121,7 +121,7 @@ namespace AoC_2020
                     toRemove.ForEach(sb => possibleAddressList.Remove(sb));
                 }
 
-                return possibleAddressList.Select(sb => Convert.ToInt64(string.Join(string.Empty, sb.ToString().Reverse()), 2)).ToList();
+                return possibleAddressList.ConvertAll(str => Convert.ToInt64(string.Join(string.Empty, str.Reverse()), 2));
             }
         }
 
