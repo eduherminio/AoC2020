@@ -93,7 +93,7 @@ namespace AoC_2020
 
                 possibleAddressList.AddRange(address.Last() == 'X'
                     ? new[] { new StringBuilder("0"), new StringBuilder("1") }
-                    : new[] { new StringBuilder(address.Last()) });
+                    : new[] { new StringBuilder($"{address.Last()}") });        // Convert char to string!
 
                 foreach (var ch in address.Reverse().Skip(1))
                 {
