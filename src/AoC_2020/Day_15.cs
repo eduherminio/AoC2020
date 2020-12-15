@@ -26,19 +26,16 @@ namespace AoC_2020
                 history.Add(_input[index], index + 1);
             }
 
-            var turn = _input.Count + 1;
+            var turn = _input.Count;
             var previousTurnNumber = _input.Last();
-            int tmp;
 
-            while (turn <= targetTurn)
+            while (++turn <= targetTurn)
             {
-                tmp = history.TryGetValue(previousTurnNumber, out var oldTurn)
-                    ? turn - 1 - oldTurn
-                    : 0;
-
-                history[previousTurnNumber] = turn - 1;
-                previousTurnNumber = tmp;
-                ++turn;
+                (history[previousTurnNumber], previousTurnNumber) = (
+                    turn - 1,
+                    history.TryGetValue(previousTurnNumber, out var oldTurn)
+                        ? turn - 1 - oldTurn
+                        : 0);
             }
 
             return previousTurnNumber.ToString();
