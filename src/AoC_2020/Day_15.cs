@@ -1,5 +1,4 @@
 ﻿using AoCHelper;
-using FileParser;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,9 +18,9 @@ namespace AoC_2020
 
         public override string Solve_2() => PlayMemoryGame(30000000);
 
-        private string PlayMemoryGame(int lastTurn)
+        private string PlayMemoryGame(int targetTurn)
         {
-            var history = new Dictionary<int, int>();
+            var history = new Dictionary<int, int>(targetTurn);
             for (int index = 0; index < _input.Count - 1; ++index)
             {
                 history.Add(_input[index], index + 1);
@@ -30,7 +29,7 @@ namespace AoC_2020
             var turn = _input.Count + 1;
             var previousTurnNumber = _input.Last();
 
-            while (turn <= lastTurn)
+            while (turn <= targetTurn)
             {
                 var n = history.TryGetValue(previousTurnNumber, out var oldTurn)
                     ? turn - 1 - oldTurn
