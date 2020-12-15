@@ -16,7 +16,7 @@ namespace AoC_2020
 
         public override string Solve_1() => PlayMemoryGame(2020);
 
-        public override string Solve_2() => PlayMemoryGame(30000000);
+        public override string Solve_2() => PlayMemoryGame(30_000_000);
 
         private string PlayMemoryGame(int targetTurn)
         {
