@@ -4,7 +4,6 @@ using SheepTools;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace AoC_2020
@@ -38,8 +37,62 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var validTickets = new List<Ticket>() { _input.MyTicket };
+            var validTickets = GetValidNearbyTickets().ToList();
 
+            Dictionary<string, List<int>> candidateIndexesByFieldName = GetCandidates(validTickets);
+
+            var indexByFieldName = new Dictionary<string, int>();
+            bool change = true;
+
+            while (change)
+            {
+                var nonResolvedRules = candidateIndexesByFieldName
+                    .Where(pair => !indexByFieldName.ContainsKey(pair.Key));
+
+                // Single values
+                while (change)
+                {
+                    change = false;
+                    foreach (var confirmed in nonResolvedRules.Where(pair => pair.Value.Count == 1))
+                    {
+                        change = true;
+
+                        var value = confirmed.Value.Single();
+                        indexByFieldName.Add(confirmed.Key, value);
+
+                        candidateIndexesByFieldName.Where(pair => pair.Value.Contains(value))
+                            .ForEach(pair => candidateIndexesByFieldName[pair.Key].Remove(value));
+                    }
+                }
+
+                change = false;
+
+                // Unique values
+                var uniqueIndexes = nonResolvedRules
+                    .Where(pair => pair.Value.Any(v =>
+                        candidateIndexesByFieldName.Count(p => p.Value.Contains(v)) == 1))
+                    .ToList();
+
+                if (uniqueIndexes.Count > 0)
+                {
+                    foreach (var uniqueIndex in uniqueIndexes)
+                    {
+                        var uniqueValue = uniqueIndex.Value.Single(v => nonResolvedRules.Count(p => p.Value.Contains(v)) == 1);
+                        indexByFieldName.Add(uniqueIndex.Key, uniqueValue);
+                    }
+
+                    change = true;
+                }
+            }
+
+            return indexByFieldName
+                .Where(pair => pair.Key.StartsWith("departure"))
+                .Aggregate((double)1, (total, pair) => total * _input.MyTicket.FieldLengths[pair.Value])
+                .ToString();
+        }
+
+        private IEnumerable<Ticket> GetValidNearbyTickets()
+        {
             foreach (var nearbyTicket in _input.NearbyTickets)
             {
                 bool isValid = true;
@@ -53,130 +106,38 @@ namespace AoC_2020
                 }
                 if (isValid)
                 {
-                    validTickets.Add(nearbyTicket);
+                    yield return nearbyTicket;
                 }
             }
 
-            //for (int index = 0; index < _input.MyTicket.FieldLengths.Count; ++index)
-            //{
-            //    var myTicketField = _input.MyTicket.FieldLengths[index];
+            yield return _input.MyTicket;
+        }
 
-            //    var validLengths = validTickets.Select(ticket => ticket.FieldLengths[index]);
-
-            //    foreach (var rule in _input.Rules)
-            //    {
-            //        var candidates =
-            //    }
-            //    var rules = validLengths.Select(length =>
-            //        _input.Rules.Where(r => r.restrictions.Any(r => r.))
-            //}
-
-
-
-
+        private Dictionary<string, List<int>> GetCandidates(List<Ticket> validTickets)
+        {
             var fieldNameByCandidateIndex = new Dictionary<string, List<int>>();
-            bool change = true;
 
-            while (change)
+            foreach (var rule in _input.Rules)
             {
-                change = false;
+                var candidatePositions = new List<int>();
 
-                //foreach (var rule in _input.Rules.Where(r => r.FieldName.StartsWith("departure")))
-                foreach (var rule in _input.Rules.Where(r => !fieldNameByCandidateIndex.ContainsKey(r.FieldName)))
+                for (int index = 0; index < _input.MyTicket.FieldLengths.Count; ++index)
                 {
-                    var candidatePositions = new List<int>();
-
-                    //foreach (var index in _input.MyTicket.FieldLengths.Where(index => !fieldNameByIndex.ContainsValue(index)))
-                    for (int index = 0; index < _input.MyTicket.FieldLengths.Count; ++index)
+                    if (validTickets
+                         .Select(ticket => ticket.FieldLengths[index])
+                         .All(validLength => rule.restrictions.Any(r => validLength >= r.Min && validLength <= r.Max)))
                     {
-                        //if(fieldNameByIndex.ContainsValue(r.FieldName))
-                        //{
-                        //    continue;
-                        //}
-                        var myTicketField = _input.MyTicket.FieldLengths[index];
-
-                        if (!rule.restrictions.Any(r => myTicketField >= r.Min && myTicketField <= r.Max))
-                        {
-                            continue;
-                        }
-
-                        var validLengths = validTickets
-                            .Select(ticket => ticket.FieldLengths[index])
-                            .Count(validLength => rule.restrictions.Any(r => validLength >= r.Min && validLength <= r.Max));
-
-                        if (validLengths == validTickets.Count)
-                        {
-                            candidatePositions.Add(index);
-                        }
+                        candidatePositions.Add(index);
                     }
+                }
 
-                    if (candidatePositions.Count > 0)
-                    {
-                        if (fieldNameByCandidateIndex.TryGetValue(rule.FieldName, out var existing))
-                        {
-                            fieldNameByCandidateIndex[rule.FieldName].AddRange(candidatePositions);
-                        }
-                        else
-                        {
-                            fieldNameByCandidateIndex.Add(rule.FieldName, candidatePositions);
-                        }
-
-                        change = true;
-                    }
-
-                    //if (candidatePositions.Count == 1)
-                    //{
-                    //    fieldNameByIndex.Add(rule.FieldName, candidatePositions);
-                    //    change = true;
-                    //}
+                if (candidatePositions.Count > 0)
+                {
+                    fieldNameByCandidateIndex.Add(rule.FieldName, candidatePositions);
                 }
             }
 
-            var fieldNameByIndex = new Dictionary<string, int>();
-            change = true;
-
-            while (change)
-            {
-                var nonResolvedRules = fieldNameByCandidateIndex
-                    .Where(pair => !fieldNameByIndex.ContainsKey(pair.Key));
-
-                // Single value
-                while (change)
-                {
-                    change = false;
-                    foreach (var confirmed in nonResolvedRules.Where(pair => pair.Value.Count == 1))
-                    {
-                        change = true;
-                        var value = confirmed.Value.Single();
-                        fieldNameByIndex.Add(confirmed.Key, value);
-
-                        fieldNameByCandidateIndex.Where(pair => pair.Value.Contains(value))
-                            .ForEach(pair => fieldNameByCandidateIndex[pair.Key].Remove(value));
-                    }
-                }
-
-                change = false;
-                // Unique value
-                var uniqueIndexes = nonResolvedRules
-                    .Where(pair => pair.Value.Any(v =>
-                        fieldNameByCandidateIndex.Count(p => p.Value.Contains(v)) == 1))
-                    .ToList();
-
-                if (uniqueIndexes.Count > 0)
-                {
-                    foreach (var uniqueIndex in uniqueIndexes)
-                    {
-                        var uniqueValue = uniqueIndex.Value.Single(v => nonResolvedRules.Count(p => p.Value.Contains(v)) == 1);
-                        fieldNameByIndex.Add(uniqueIndex.Key, uniqueValue);
-                    }
-                    change = true;
-                }
-            }
-
-            return fieldNameByIndex
-                .Where(pair => pair.Key.StartsWith("departure"))
-                .Aggregate((double)1, (total, pair) => total * _input.MyTicket.FieldLengths[pair.Value])
-                .ToString();
+            return fieldNameByCandidateIndex;
         }
 
         private Input ParseInput()
