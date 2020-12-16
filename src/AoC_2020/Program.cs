@@ -7,7 +7,7 @@ if (args.Length == 0)
 }
 else if (args.Length == 1 && args[0].Contains("all", System.StringComparison.CurrentCultureIgnoreCase))
 {
-    Solver.SolveAll();
+    Solver.SolveAll(new SolverConfiguration { ShowConstructorElapsedTime = true, ShowTotalElapsedTimePerDay = true });
 }
 else
 {
