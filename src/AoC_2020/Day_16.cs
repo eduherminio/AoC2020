@@ -40,44 +40,45 @@ namespace AoC_2020
             var validTickets = GetValidNearbyTickets().ToList();
 
             Dictionary<string, List<int>> candidateIndexesByFieldName = GetCandidates(validTickets);
+            Dictionary<string, int> indexByFieldName = new Dictionary<string, int>();
 
-            var indexByFieldName = new Dictionary<string, int>();
             bool change = true;
 
             while (change)
             {
-                var nonResolvedRules = candidateIndexesByFieldName
+                var nonResolvedCandidates = candidateIndexesByFieldName
                     .Where(pair => !indexByFieldName.ContainsKey(pair.Key));
 
-                // Single values
+                // Assing as solution those candidates with a single possible index
+                // and remove those indexes from all candidate pairs
                 while (change)
                 {
                     change = false;
-                    foreach (var confirmed in nonResolvedRules.Where(pair => pair.Value.Count == 1))
+                    foreach (var confirmed in nonResolvedCandidates.Where(pair => pair.Value.Count == 1))
                     {
                         change = true;
 
                         var value = confirmed.Value.Single();
                         indexByFieldName.Add(confirmed.Key, value);
 
-                        candidateIndexesByFieldName.Where(pair => pair.Value.Contains(value))
+                        nonResolvedCandidates.Where(pair => pair.Value.Contains(value))
                             .ForEach(pair => candidateIndexesByFieldName[pair.Key].Remove(value));
                     }
                 }
 
                 change = false;
 
-                // Unique values
-                var uniqueIndexes = nonResolvedRules
+                // Assign as solution those candidates that have a possible index which nobody else has
+                var uniqueIndexes = nonResolvedCandidates
                     .Where(pair => pair.Value.Any(v =>
-                        candidateIndexesByFieldName.Count(p => p.Value.Contains(v)) == 1))
+                        nonResolvedCandidates.Count(p => p.Value.Contains(v)) == 1))
                     .ToList();
 
                 if (uniqueIndexes.Count > 0)
                 {
                     foreach (var uniqueIndex in uniqueIndexes)
                     {
-                        var uniqueValue = uniqueIndex.Value.Single(v => nonResolvedRules.Count(p => p.Value.Contains(v)) == 1);
+                        var uniqueValue = uniqueIndex.Value.Single(v => nonResolvedCandidates.Count(p => p.Value.Contains(v)) == 1);
                         indexByFieldName.Add(uniqueIndex.Key, uniqueValue);
                     }
 
