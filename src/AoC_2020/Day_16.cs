@@ -24,7 +24,7 @@ namespace AoC_2020
             {
                 foreach (var fieldLength in nearbyTicket.FieldLengths)
                 {
-                    if (!_input.Rules.Any(rule => rule.restrictions.Any(restriction => fieldLength >= restriction.Min && fieldLength <= restriction.Max)))
+                    if (!_input.Rules.Any(rule => rule.Restrictions.Any(restriction => fieldLength >= restriction.Min && fieldLength <= restriction.Max)))
                     {
                         errorRate += fieldLength;
                         break;
@@ -98,7 +98,7 @@ namespace AoC_2020
                 bool isValid = true;
                 foreach (var fieldLength in nearbyTicket.FieldLengths)
                 {
-                    if (!_input.Rules.Any(rule => rule.restrictions.Any(restriction => fieldLength >= restriction.Min && fieldLength <= restriction.Max)))
+                    if (!_input.Rules.Any(rule => rule.Restrictions.Any(restriction => fieldLength >= restriction.Min && fieldLength <= restriction.Max)))
                     {
                         isValid = false;
                         break;
@@ -125,7 +125,7 @@ namespace AoC_2020
                 {
                     if (validTickets
                          .Select(ticket => ticket.FieldLengths[index])
-                         .All(validLength => rule.restrictions.Any(r => validLength >= r.Min && validLength <= r.Max)))
+                         .All(validLength => rule.Restrictions.Any(r => validLength >= r.Min && validLength <= r.Max)))
                     {
                         candidatePositions.Add(index);
                     }
@@ -176,7 +176,7 @@ namespace AoC_2020
             }
         }
 
-        private record Rule(string FieldName, ICollection<(int Min, int Max)> restrictions);
+        private record Rule(string FieldName, ICollection<(int Min, int Max)> Restrictions);
 
         private record Ticket(List<int> FieldLengths);
 
