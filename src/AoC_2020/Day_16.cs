@@ -49,7 +49,7 @@ namespace AoC_2020
                 var nonResolvedCandidates = candidateIndexesByFieldName
                     .Where(pair => !indexByFieldName.ContainsKey(pair.Key));
 
-                // Assing as solution those candidates with a single possible index
+                // Assign as solution those candidates with a single possible index
                 // and remove those indexes from all candidate pairs
                 while (change)
                 {
@@ -150,16 +150,17 @@ namespace AoC_2020
             foreach (var line in groups[0])
             {
                 var split = line.Split(':', StringSplitOptions.TrimEntries);
-                var fieldName = split[0];
-                var rawRestrictions = split[1].Split("or", StringSplitOptions.TrimEntries);
-                var restrictions = new List<(int, int)>();
-                foreach (var rawRestriction in rawRestrictions)
-                {
-                    var pair = rawRestriction.Split('-');
-                    restrictions.Add((int.Parse(pair[0]), int.Parse(pair[1])));
-                }
+                var restrictions = split[1]
+                    .Split("or", StringSplitOptions.TrimEntries)
+                    .Select(restrictions =>
+                        {
+                            var pair = restrictions.Split('-');
+                            Ensure.Count(2, pair);
+                            return (int.Parse(pair[0]), int.Parse(pair[1]));
+                        })
+                    .ToList();
 
-                rules.Add(new Rule(fieldName, restrictions));
+                rules.Add(new Rule(split[0], restrictions));
             }
 
             var myTicket = new Ticket(ParseTickets(groups[1]).Single().ToList());
