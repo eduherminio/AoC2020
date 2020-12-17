@@ -8,9 +8,9 @@ namespace AoC_2020.GameOfLife
     {
         public static void Mutate(HashSet<Point> alivePoints)
         {
-            var pointsToActivate = new HashSet<Point>();
-            var pointsToDeactivate = new HashSet<Point>();
-            var neighbours = new Dictionary<Point, int>();
+            var pointsToActivate = new HashSet<Point>(alivePoints.Count);
+            var pointsToDeactivate = new HashSet<Point>(alivePoints.Count);
+            var neighbours = new Dictionary<Point, int>(10 * alivePoints.Count);
 
             foreach (var point in alivePoints)
             {
