@@ -1,5 +1,5 @@
-﻿using AoCHelper;
-using SheepTools;
+﻿using AoC_2020.GameOfLife;
+using AoCHelper;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -25,27 +25,41 @@ namespace AoC_2020
             //Print(state);
             for (int cycle = 1; cycle <= 6; ++cycle)
             {
-                Mutate(state);
+                Mutate_Dictionary(state);
                 //Print(state);
             }
 
             return state.Count(pair => pair.Value).ToString();
         }
 
-        public override string Solve_2()
+        public override string Solve_2() => Part2_GameOfLife();
+
+        public string Part2_GameOfLife()
+        {
+            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+
+            for (int cycle = 1; cycle <= 6; ++cycle)
+            {
+                GameOfLife.GameOfLife.Mutate(state);
+            }
+
+            return state.Count.ToString();
+        }
+
+        public string Part2_Dictionary()
         {
             Dictionary<Point, bool> state = new(_input.Select(p =>
                 new KeyValuePair<Point, bool>(new Point4D(p.X, p.Y, 0, 0), true)));
 
             for (int cycle = 1; cycle <= 6; ++cycle)
             {
-                Mutate(state);
+                Mutate_Dictionary(state);
             }
 
             return state.Count(pair => pair.Value).ToString();
         }
 
-        private static void Mutate(Dictionary<Point, bool> state)
+        private static void Mutate_Dictionary(Dictionary<Point, bool> state)
         {
             var pointsToActivate = new HashSet<Point>();
             var pointsToDeactivate = new HashSet<Point>();
@@ -85,6 +99,7 @@ namespace AoC_2020
                     MutatePoint(
                         new KeyValuePair<Point, bool>(neighbourPair.point, neighbourPair.isActive),
                         neighbourNeighbours);
+
                     if (!state.ContainsKey(neighbourPair.point))
                     {
                         visitedPoints.Add(neighbourPair.point);
@@ -110,6 +125,81 @@ namespace AoC_2020
                     if (activeNeighboursCount == 3)
                     {
                         pointsToActivate.Add(pair.Key);
+                    }
+                }
+            }
+        }
+
+        public string Part2_Set()
+        {
+            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+
+            for (int cycle = 1; cycle <= 6; ++cycle)
+            {
+                Mutate_Set(state);
+            }
+
+            return state.Count.ToString();
+        }
+
+        private static void Mutate_Set(HashSet<Point> state)
+        {
+            var pointsToActivate = new HashSet<Point>();
+            var pointsToDeactivate = new HashSet<Point>();
+
+            var visitedPoints = new HashSet<Point>();
+            foreach (var point in state)
+            {
+                if (visitedPoints.Contains(point))
+                {
+                    continue;
+                }
+
+                var neighbours = point.Neighbours()
+                    .Select(p => (point: p, isActive: state.Contains(p)));
+
+                MutatePoint((point, true), neighbours);
+                visitedPoints.Add(point);
+
+                foreach (var neighbourPair in neighbours)
+                {
+                    if (visitedPoints.Contains(neighbourPair.point))
+                    {
+                        continue;
+                    }
+
+                    var neighbourNeighbours = neighbourPair.point.Neighbours()
+                        .Select(p => (point: p, isActive: state.Contains(p)));
+
+                    MutatePoint(
+                        (neighbourPair.point, neighbourPair.isActive),
+                        neighbourNeighbours);
+
+                    if (!state.Contains(neighbourPair.point))
+                    {
+                        visitedPoints.Add(neighbourPair.point);
+                    }
+                }
+            }
+
+            pointsToActivate.ForEach(p => state.Add(p));
+            pointsToDeactivate.ForEach(p => state.Remove(p));
+
+            void MutatePoint((Point Point, bool isActive) pair, IEnumerable<(Point point, bool isActive)> neighbours)
+            {
+                var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
+                if (pair.isActive)
+                {
+                    if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
+                    {
+                        pointsToDeactivate.Add(pair.Point);
+                    }
+                }
+                else
+                {
+                    if (activeNeighboursCount == 3)
+                    {
+                        pointsToActivate.Add(pair.Point);
                     }
                 }
             }
@@ -163,76 +253,6 @@ namespace AoC_2020
                     }
                 }
             }
-        }
-
-        private abstract record Point()
-        {
-            public abstract Point[] Neighbours();
-        }
-
-        private record Point3D(int X, int Y, int Z) : Point
-        {
-            public override Point3D[] Neighbours()
-            {
-                var result = NeighboursIncludingThis().ToList();
-                result.Remove(this);
-
-#if DEBUG
-                Ensure.Count(26, result);
-#endif
-
-                return result.ToArray();
-            }
-
-            private IEnumerable<Point3D> NeighboursIncludingThis()
-            {
-                for (int x = X - 1; x <= X + 1; ++x)
-                {
-                    for (int y = Y - 1; y <= Y + 1; ++y)
-                    {
-                        for (int z = Z - 1; z <= Z + 1; ++z)
-                        {
-                            yield return new Point3D(x, y, z);
-                        }
-                    }
-                }
-            }
-
-            public override string ToString() => $"[{X}, {Y}, {Z}]";
-        }
-
-        private record Point4D(int X, int Y, int Z, int W) : Point3D(X, Y, Z)
-        {
-            public override Point4D[] Neighbours()
-            {
-                var result = NeighboursIncludingThis().ToList();
-                result.Remove(this);
-
-#if DEBUG
-                Ensure.Count(80, result);
-#endif
-
-                return result.ToArray();
-            }
-
-            private IEnumerable<Point4D> NeighboursIncludingThis()
-            {
-                for (int x = X - 1; x <= X + 1; ++x)
-                {
-                    for (int y = Y - 1; y <= Y + 1; ++y)
-                    {
-                        for (int z = Z - 1; z <= Z + 1; ++z)
-                        {
-                            for (int w = W - 1; w <= W + 1; ++w)
-                            {
-                                yield return new Point4D(x, y, z, w);
-                            }
-                        }
-                    }
-                }
-            }
-
-            public override string ToString() => $"[{X}, {Y}, {Z}, {W}]";
         }
     }
 }
