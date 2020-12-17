@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <NoWarn>S101;S125</NoWarn>
+    <NoWarn>S101;S125;S1144;RCS1213;IDE0051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
