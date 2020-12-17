@@ -79,7 +79,7 @@ namespace AoC_2020
 
         /// <summary>
         /// My initial solution after clean up.
-        /// ~2 times slower than Part2_Regex
+        /// ~2 times slower than <see cref="Part2_Regex"/>
         /// </summary>
         /// <returns></returns>
         internal string Part2_AsLittleRegexAsPossible()
@@ -151,7 +151,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// ~6 times slower than Part2_Regex, ~3 times slower than Part2_AsLittleRegexAsPossible
+        /// ~6 times slower than <see cref="Part2_Regex"/>, ~3 times slower than Part2_AsLittleRegexAsPossible
         /// </summary>
         /// <returns></returns>
         internal string Part2_Regex_RawFile()

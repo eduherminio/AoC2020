@@ -35,7 +35,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Time times slower than xor alternative, and allocating memory
+        /// Time times slower than <see cref="Part2_xor"/>, and allocating memory
         /// </summary>
         /// <returns></returns>
         internal string Part2_Linq()

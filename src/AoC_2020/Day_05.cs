@@ -31,7 +31,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// ~ speed and allocations as Part2_Linq
+        /// ~ speed and allocations as <see cref="Part2_Linq"/>
         /// </summary>
         /// <returns></returns>
         internal string Part2_Loop()

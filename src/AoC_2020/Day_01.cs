@@ -33,7 +33,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Over 2 x slower than dictionary approach, but almost 0 memory allocation.
+        /// Over 2 x slower than <see cref="Part2_Dictionary"/>, but almost 0 memory allocation.
         /// </summary>
         /// <returns></returns>
         internal string Part2_NestedLoops()
@@ -55,7 +55,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Slighly faster than the nested loops approach in exchange of allocating some (very little) memory.
+        /// Slighly faster than <see cref="Part2_NestedLoops"/> in exchange of allocating some (very little) memory.
         /// https://www.reddit.com/r/adventofcode/comments/k4e4lm/2020_day_1_solutions/ge95uga
         /// </summary>
         /// <returns></returns>

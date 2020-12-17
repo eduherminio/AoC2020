@@ -33,7 +33,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// >2x faster than the original implementation
+        /// >2x faster than the original implementation (<see cref="Part2_Loop"/>)
         /// </summary>
         /// <returns></returns>
         internal string Part2_IntersectAll()
@@ -42,7 +42,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Original implementation translated to Linq.
+        /// Original implementation (<see cref="Part2_Loop"/>) translated to Linq.
         /// ~ speed and allocations as Part2_Loop.
         /// </summary>
         /// <returns></returns>
@@ -59,7 +59,7 @@ namespace AoC_2020
 
         /// <summary>
         /// Original implementation.
-        /// ~ speed and allocations as Part2_Linq.
+        /// ~ speed and allocations as <see cref="Part2_Linq"/>.
         /// </summary>
         /// <returns></returns>
         internal string Part2_Loop()

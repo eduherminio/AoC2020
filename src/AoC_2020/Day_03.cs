@@ -69,7 +69,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Exact same results as UnidimensionalStringList, not worth the effort
+        /// Exact same results as <see cref="Part2_UnidimensionalStringList"/>, not worth the effort
         /// </summary>
         /// <returns></returns>
         internal string Part2_MultidimensionalCharArray()
@@ -112,7 +112,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// Exact same results as UnidimensionalStringList, not worth the effort
+        /// Exact same results as <see cref="Part2_UnidimensionalStringList"/>, not worth the effort
         /// </summary>
         /// <returns></returns>
         internal string Part2_MultidimensionalCharList()
