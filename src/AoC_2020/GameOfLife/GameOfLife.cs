@@ -4,52 +4,119 @@ using System.Linq;
 
 namespace AoC_2020.GameOfLife
 {
-    public static class GameOfLife
+    public class GameOfLife
     {
-        public static void Mutate(HashSet<Point> alivePoints)
+        public int Iterations { get; private set; }
+        private readonly Dictionary<Point, Point[]> _neighboursCache;
+
+        public HashSet<Point> AliveCells { get; }
+
+        public GameOfLife(HashSet<Point> initialCells)
         {
-            var pointsToActivate = new HashSet<Point>(alivePoints.Count);
-            var pointsToDeactivate = new HashSet<Point>(alivePoints.Count);
-            var neighbours = new Dictionary<Point, int>(10 * alivePoints.Count);
+            AliveCells = initialCells;
+            Iterations = 0;
+            _neighboursCache = new Dictionary<Point, Point[]>();
+        }
 
-            foreach (var point in alivePoints)
+        public void Mutate()
+        {
+            ++Iterations;
+
+            var cellsToBorn = new HashSet<Point>(AliveCells.Count);
+            var cellsToDie = new HashSet<Point>(AliveCells.Count);
+            var neighbours = new Dictionary<Point, int>(10 * AliveCells.Count);
+
+            foreach (var cell in AliveCells)
             {
-                var pointNeighbours = MutatePoint(point, true, alivePoints, pointsToActivate, pointsToDeactivate);
+                var cellNeighbours = MutateCell(cell, true, AliveCells, cellsToBorn, cellsToDie);
 
-                pointNeighbours.ForEach(p =>
+                cellNeighbours.ForEach(p =>
                 {
-                    if (neighbours.TryGetValue(p.point, out var value))
+                    if (neighbours.TryGetValue(p.cell, out var value))
                     {
-                        neighbours[p.point] = ++value;
+                        neighbours[p.cell] = ++value;
                     }
                     else
                     {
-                        neighbours[p.point] = 1;
+                        neighbours[p.cell] = 1;
                     }
                 });
             }
 
-            foreach (var neighbourPair in neighbours.Where(pair => pair.Value >= 3 && !alivePoints.Contains(pair.Key)))
+            foreach (var neighbourPair in neighbours.Where(pair => pair.Value >= 3 && !AliveCells.Contains(pair.Key)))
             {
-                MutatePoint(neighbourPair.Key, false, alivePoints, pointsToActivate, pointsToDeactivate);
+                MutateCell(neighbourPair.Key, false, AliveCells, cellsToBorn, cellsToDie);
             }
 
-            pointsToActivate.ForEach(p => alivePoints.Add(p));
-            pointsToDeactivate.ForEach(p => alivePoints.Remove(p));
+            cellsToBorn.ForEach(p => AliveCells.Add(p));
+            cellsToDie.ForEach(p => AliveCells.Remove(p));
 
-            static IEnumerable<(Point point, bool isAlive)> MutatePoint(Point point, bool isAlive,
-                HashSet<Point> alivePoints, HashSet<Point> pointsToActivate, HashSet<Point> pointsToDeactivate)
+            static IEnumerable<(Point cell, bool isAlive)> MutateCell(Point cell, bool isAlive,
+                HashSet<Point> aliveCells, HashSet<Point> cellsToBorn, HashSet<Point> cellsToDie)
             {
-                var pointNeighbours = point.Neighbours()
-                    .Select(p => (point: p, alivePoints.Contains(p)));
+                var neighboursWithStatus = cell.Neighbours()
+                    .Select(p => (cell: p, aliveCells.Contains(p)));
 
-                GameOfLife.MutatePoint(point, isAlive, pointNeighbours, pointsToActivate, pointsToDeactivate);
+                GameOfLife.MutateCell(cell, isAlive, neighboursWithStatus, cellsToBorn, cellsToDie);
 
-                return pointNeighbours;
+                return neighboursWithStatus;
             }
         }
 
-        private static void MutatePoint(Point point, bool isAlive, IEnumerable<(Point point, bool isActive)> neighbours, HashSet<Point> toActivate, HashSet<Point> toDeactivate)
+        /// <summary>
+        /// For Problem 17, this allocates 40% less memory than <see cref="Mutate"/>, but it's also 40% slower than it.
+        /// </summary>
+        public void MutateCachingNeighbours()
+        {
+            ++Iterations;
+
+            var cellsToBorn = new HashSet<Point>(AliveCells.Count);
+            var cellsToDie = new HashSet<Point>(AliveCells.Count);
+            var neighbours = new Dictionary<Point, int>(10 * AliveCells.Count);
+
+            foreach (var cell in AliveCells)
+            {
+                var cellNeighbours = MutateCell(cell, true);
+
+                cellNeighbours.ForEach(p =>
+                {
+                    if (neighbours.TryGetValue(p.cell, out var value))
+                    {
+                        neighbours[p.cell] = ++value;
+                    }
+                    else
+                    {
+                        neighbours[p.cell] = 1;
+                    }
+                });
+            }
+
+            foreach (var neighbourPair in neighbours.Where(pair => pair.Value >= 3 && !AliveCells.Contains(pair.Key)))
+            {
+                MutateCell(neighbourPair.Key, false);
+            }
+
+            cellsToBorn.ForEach(p => AliveCells.Add(p));
+            cellsToDie.ForEach(p => AliveCells.Remove(p));
+
+            IEnumerable<(Point cell, bool isAlive)> MutateCell(Point cell, bool isAlive)
+            {
+                if (!_neighboursCache.TryGetValue(cell, out var cellNeighbours))
+                {
+                    cellNeighbours = cell.Neighbours();
+                    _neighboursCache[cell] = cellNeighbours;
+                }
+
+                var neighboursWithStatus = cellNeighbours
+                    .Select(p => (cell: p, AliveCells.Contains(p)));
+
+                GameOfLife.MutateCell(cell, isAlive, neighboursWithStatus, cellsToBorn, cellsToDie);
+
+                return neighboursWithStatus;
+            }
+        }
+
+        private static void MutateCell(Point cell, bool isAlive, IEnumerable<(Point cell, bool isActive)> neighbours, HashSet<Point> toActivate, HashSet<Point> toDeactivate)
         {
             var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
 
@@ -57,14 +124,14 @@ namespace AoC_2020.GameOfLife
             {
                 if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
                 {
-                    toDeactivate.Add(point);
+                    toDeactivate.Add(cell);
                 }
             }
             else
             {
                 if (activeNeighboursCount == 3)
                 {
-                    toActivate.Add(point);
+                    toActivate.Add(cell);
                 }
             }
         }

@@ -14,5 +14,8 @@ namespace AoC_2020.Benchmarks
 
         [Benchmark]
         public string Part2_GameOfLife() => _problem.Part2_GameOfLife();
+
+        [Benchmark]
+        public string Part2_GameOfLife_CachingNeighbours() => _problem.Part2_GameOfLife_CachingNeighbours();
     }
 }

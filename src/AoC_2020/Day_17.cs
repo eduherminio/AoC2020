@@ -19,33 +19,62 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            Dictionary<Point, bool> state = new(_input.Select(p =>
-                new KeyValuePair<Point, bool>(new Point3D(p.X, p.Y, 0), true)));
+            HashSet<Point> state = new(_input.Select(p => new Point3D(p.X, p.Y, 0)));
 
-            //Print(state);
-            for (int cycle = 1; cycle <= 6; ++cycle)
+            var game = new GameOfLife.GameOfLife(state);
+
+            //Print(game.AliveCells);
+            while (game.Iterations < 6)
             {
-                Mutate_Dictionary(state);
-                //Print(state);
+                game.Mutate();
+                //Print(game.AliveCells);
             }
 
-            return state.Count(pair => pair.Value).ToString();
+            return game.AliveCells.Count.ToString();
         }
 
         public override string Solve_2() => Part2_GameOfLife();
 
+        /// <summary>
+        /// 50% faster than <see cref="Part2_Set"/>
+        /// </summary>
+        /// <returns></returns>
         public string Part2_GameOfLife()
         {
             HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
 
-            for (int cycle = 1; cycle <= 6; ++cycle)
+            var game = new GameOfLife.GameOfLife(state);
+
+            while (game.Iterations < 6)
             {
-                GameOfLife.GameOfLife.Mutate(state);
+                game.Mutate();
             }
 
-            return state.Count.ToString();
+            return game.AliveCells.Count.ToString();
         }
 
+        /// <summary>
+        /// Allocates 40% less memory than <see cref="Part2_GameOfLife"/>, but it's also 40% slower than it.
+        /// </summary>
+        /// <returns></returns>
+        public string Part2_GameOfLife_CachingNeighbours()
+        {
+            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+
+            var game = new GameOfLife.GameOfLife(state);
+
+            while (game.Iterations < 6)
+            {
+                game.MutateCachingNeighbours();
+            }
+
+            return game.AliveCells.Count.ToString();
+        }
+
+        /// <summary>
+        /// Original implementation
+        /// </summary>
+        /// <returns></returns>
         public string Part2_Dictionary()
         {
             Dictionary<Point, bool> state = new(_input.Select(p =>
@@ -57,79 +86,83 @@ namespace AoC_2020
             }
 
             return state.Count(pair => pair.Value).ToString();
-        }
 
-        private static void Mutate_Dictionary(Dictionary<Point, bool> state)
-        {
-            var pointsToActivate = new HashSet<Point>();
-            var pointsToDeactivate = new HashSet<Point>();
-
-            var visitedPoints = new HashSet<Point>();
-            foreach (var pair in state)
+            static void Mutate_Dictionary(Dictionary<Point, bool> state)
             {
-                if (visitedPoints.Contains(pair.Key))
-                {
-                    continue;
-                }
+                var pointsToActivate = new HashSet<Point>();
+                var pointsToDeactivate = new HashSet<Point>();
 
-                var neighbours = pair.Key.Neighbours().Select(p =>
+                var visitedPoints = new HashSet<Point>();
+                foreach (var pair in state)
                 {
-                    return state.TryGetValue(p, out bool isActive)
-                        ? (point: p, isActive)
-                        : (point: p, isActive: false);
-                });
-
-                MutatePoint(pair, neighbours);
-                visitedPoints.Add(pair.Key);
-
-                foreach (var neighbourPair in neighbours)
-                {
-                    if (visitedPoints.Contains(neighbourPair.point))
+                    if (visitedPoints.Contains(pair.Key))
                     {
                         continue;
                     }
 
-                    var neighbourNeighbours = neighbourPair.point.Neighbours().Select(p =>
+                    var neighbours = pair.Key.Neighbours().Select(p =>
                     {
                         return state.TryGetValue(p, out bool isActive)
                             ? (point: p, isActive)
                             : (point: p, isActive: false);
                     });
 
-                    MutatePoint(
-                        new KeyValuePair<Point, bool>(neighbourPair.point, neighbourPair.isActive),
-                        neighbourNeighbours);
+                    MutatePoint(pair, neighbours);
+                    visitedPoints.Add(pair.Key);
 
-                    if (!state.ContainsKey(neighbourPair.point))
+                    foreach (var neighbourPair in neighbours)
                     {
-                        visitedPoints.Add(neighbourPair.point);
+                        if (visitedPoints.Contains(neighbourPair.point))
+                        {
+                            continue;
+                        }
+
+                        var neighbourNeighbours = neighbourPair.point.Neighbours().Select(p =>
+                        {
+                            return state.TryGetValue(p, out bool isActive)
+                                ? (point: p, isActive)
+                                : (point: p, isActive: false);
+                        });
+
+                        MutatePoint(
+                            new KeyValuePair<Point, bool>(neighbourPair.point, neighbourPair.isActive),
+                            neighbourNeighbours);
+
+                        if (!state.ContainsKey(neighbourPair.point))
+                        {
+                            visitedPoints.Add(neighbourPair.point);
+                        }
                     }
                 }
-            }
 
-            pointsToActivate.ForEach(p => state[p] = true);
-            pointsToDeactivate.ForEach(p => state[p] = false);
+                pointsToActivate.ForEach(p => state[p] = true);
+                pointsToDeactivate.ForEach(p => state[p] = false);
 
-            void MutatePoint(KeyValuePair<Point, bool> pair, IEnumerable<(Point point, bool isActive)> neighbours)
-            {
-                var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
-                if (pair.Value)
+                void MutatePoint(KeyValuePair<Point, bool> pair, IEnumerable<(Point point, bool isActive)> neighbours)
                 {
-                    if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
+                    var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
+                    if (pair.Value)
                     {
-                        pointsToDeactivate.Add(pair.Key);
+                        if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
+                        {
+                            pointsToDeactivate.Add(pair.Key);
+                        }
                     }
-                }
-                else
-                {
-                    if (activeNeighboursCount == 3)
+                    else
                     {
-                        pointsToActivate.Add(pair.Key);
+                        if (activeNeighboursCount == 3)
+                        {
+                            pointsToActivate.Add(pair.Key);
+                        }
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// First improvement, 40% faster than <see cref="Part2_Dictionary"/>
+        /// </summary>
+        /// <returns></returns>
         public string Part2_Set()
         {
             HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
@@ -140,87 +173,87 @@ namespace AoC_2020
             }
 
             return state.Count.ToString();
-        }
 
-        private static void Mutate_Set(HashSet<Point> state)
-        {
-            var pointsToActivate = new HashSet<Point>();
-            var pointsToDeactivate = new HashSet<Point>();
 
-            var visitedPoints = new HashSet<Point>();
-            foreach (var point in state)
+            static void Mutate_Set(HashSet<Point> state)
             {
-                if (visitedPoints.Contains(point))
+                var pointsToActivate = new HashSet<Point>();
+                var pointsToDeactivate = new HashSet<Point>();
+
+                var visitedPoints = new HashSet<Point>();
+                foreach (var point in state)
                 {
-                    continue;
-                }
-
-                var neighbours = point.Neighbours()
-                    .Select(p => (point: p, isActive: state.Contains(p)));
-
-                MutatePoint((point, true), neighbours);
-                visitedPoints.Add(point);
-
-                foreach (var neighbourPair in neighbours)
-                {
-                    if (visitedPoints.Contains(neighbourPair.point))
+                    if (visitedPoints.Contains(point))
                     {
                         continue;
                     }
 
-                    var neighbourNeighbours = neighbourPair.point.Neighbours()
+                    var neighbours = point.Neighbours()
                         .Select(p => (point: p, isActive: state.Contains(p)));
 
-                    MutatePoint(
-                        (neighbourPair.point, neighbourPair.isActive),
-                        neighbourNeighbours);
+                    MutatePoint((point, true), neighbours);
+                    visitedPoints.Add(point);
 
-                    if (!state.Contains(neighbourPair.point))
+                    foreach (var neighbourPair in neighbours)
                     {
-                        visitedPoints.Add(neighbourPair.point);
+                        if (visitedPoints.Contains(neighbourPair.point))
+                        {
+                            continue;
+                        }
+
+                        var neighbourNeighbours = neighbourPair.point.Neighbours()
+                            .Select(p => (point: p, isActive: state.Contains(p)));
+
+                        MutatePoint(
+                            (neighbourPair.point, neighbourPair.isActive),
+                            neighbourNeighbours);
+
+                        if (!state.Contains(neighbourPair.point))
+                        {
+                            visitedPoints.Add(neighbourPair.point);
+                        }
                     }
                 }
-            }
 
-            pointsToActivate.ForEach(p => state.Add(p));
-            pointsToDeactivate.ForEach(p => state.Remove(p));
+                pointsToActivate.ForEach(p => state.Add(p));
+                pointsToDeactivate.ForEach(p => state.Remove(p));
 
-            void MutatePoint((Point Point, bool isActive) pair, IEnumerable<(Point point, bool isActive)> neighbours)
-            {
-                var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
-                if (pair.isActive)
+                void MutatePoint((Point Point, bool isActive) pair, IEnumerable<(Point point, bool isActive)> neighbours)
                 {
-                    if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
+                    var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
+                    if (pair.isActive)
                     {
-                        pointsToDeactivate.Add(pair.Point);
+                        if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
+                        {
+                            pointsToDeactivate.Add(pair.Point);
+                        }
                     }
-                }
-                else
-                {
-                    if (activeNeighboursCount == 3)
+                    else
                     {
-                        pointsToActivate.Add(pair.Point);
+                        if (activeNeighboursCount == 3)
+                        {
+                            pointsToActivate.Add(pair.Point);
+                        }
                     }
                 }
             }
         }
 
-        private static void Print(Dictionary<Point, bool> state)
+        private static void Print(HashSet<Point> state)
         {
-            if (state.First().Key is not Point3D)
+            if (state.First() is not Point3D)
             {
                 return;
             }
 
-            var state3D = new Dictionary<Point3D, bool>(state.Select(pair =>
-                new KeyValuePair<Point3D, bool>((pair.Key as Point3D)!, pair.Value)));
+            var state3D = new HashSet<Point3D>(state.Select(point => point as Point3D)!);
 
-            var minX = state3D.Min(pair => pair.Key.X);
-            var maxX = state3D.Max(pair => pair.Key.X);
-            var minY = state3D.Min(pair => pair.Key.Y);
-            var maxY = state3D.Max(pair => pair.Key.Y);
+            var minX = state3D.Min(point => point.X);
+            var maxX = state3D.Max(point => point.X);
+            var minY = state3D.Min(point => point.Y);
+            var maxY = state3D.Max(point => point.Y);
 
-            foreach (var group in state3D.GroupBy(pair => pair.Key.Z).OrderBy(g => g.Key))
+            foreach (var group in state3D.GroupBy(point => point.Z).OrderBy(g => g.Key))
             {
                 Console.WriteLine();
                 Console.WriteLine($"Z = {group.Key}");
@@ -229,9 +262,9 @@ namespace AoC_2020
                 {
                     for (int x = minX; x <= maxX; ++x)
                     {
-                        var p = group.FirstOrDefault(p => p.Key.X == x && p.Key.Y == y);
+                        var p = group.FirstOrDefault(p => p.X == x && p.Y == y);
 
-                        Console.Write(p.Value ? '#' : '.');
+                        Console.Write(p is null ? '.' : '#');
                     }
                     Console.WriteLine();
                 }
