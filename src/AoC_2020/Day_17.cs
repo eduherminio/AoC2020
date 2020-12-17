@@ -45,13 +45,13 @@ namespace AoC_2020
             return state.Count(pair => pair.Value).ToString();
         }
 
-        private static void Mutate(Dictionary<Point, bool> state3D)
+        private static void Mutate(Dictionary<Point, bool> state)
         {
             var pointsToActivate = new HashSet<Point>();
             var pointsToDeactivate = new HashSet<Point>();
 
             var visitedPoints = new HashSet<Point>();
-            foreach (var pair in state3D)
+            foreach (var pair in state)
             {
                 if (visitedPoints.Contains(pair.Key))
                 {
@@ -60,7 +60,7 @@ namespace AoC_2020
 
                 var neighbours = pair.Key.Neighbours().Select(p =>
                 {
-                    return state3D.TryGetValue(p, out bool isActive)
+                    return state.TryGetValue(p, out bool isActive)
                         ? (point: p, isActive)
                         : (point: p, isActive: false);
                 });
@@ -77,7 +77,7 @@ namespace AoC_2020
 
                     var neighbourNeighbours = neighbourPair.point.Neighbours().Select(p =>
                     {
-                        return state3D.TryGetValue(p, out bool isActive)
+                        return state.TryGetValue(p, out bool isActive)
                             ? (point: p, isActive)
                             : (point: p, isActive: false);
                     });
@@ -85,15 +85,15 @@ namespace AoC_2020
                     MutatePoint(
                         new KeyValuePair<Point, bool>(neighbourPair.point, neighbourPair.isActive),
                         neighbourNeighbours);
-                    if (!state3D.ContainsKey(neighbourPair.point))
+                    if (!state.ContainsKey(neighbourPair.point))
                     {
                         visitedPoints.Add(neighbourPair.point);
                     }
                 }
             }
 
-            pointsToActivate.ForEach(p => state3D[p] = true);
-            pointsToDeactivate.ForEach(p => state3D[p] = false);
+            pointsToActivate.ForEach(p => state[p] = true);
+            pointsToDeactivate.ForEach(p => state[p] = false);
 
             void MutatePoint(KeyValuePair<Point, bool> pair, IEnumerable<(Point point, bool isActive)> neighbours)
             {
