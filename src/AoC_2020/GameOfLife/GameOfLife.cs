@@ -6,8 +6,9 @@ namespace AoC_2020.GameOfLife
 {
     public class GameOfLife
     {
-        public int Iterations { get; private set; }
         private readonly Dictionary<Point, Point[]> _neighboursCache;
+
+        public int Iterations { get; private set; }
 
         public HashSet<Point> AliveCells { get; }
 
@@ -116,7 +117,8 @@ namespace AoC_2020.GameOfLife
             }
         }
 
-        private static void MutateCell(Point cell, bool isAlive, IEnumerable<(Point cell, bool isActive)> neighbours, HashSet<Point> toActivate, HashSet<Point> toDeactivate)
+        private static void MutateCell(Point cell, bool isAlive, IEnumerable<(Point cell, bool isActive)> neighbours,
+            HashSet<Point> toBorn, HashSet<Point> toDie)
         {
             var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
 
@@ -124,14 +126,14 @@ namespace AoC_2020.GameOfLife
             {
                 if (activeNeighboursCount != 2 && activeNeighboursCount != 3)
                 {
-                    toDeactivate.Add(cell);
+                    toDie.Add(cell);
                 }
             }
             else
             {
                 if (activeNeighboursCount == 3)
                 {
-                    toActivate.Add(cell);
+                    toBorn.Add(cell);
                 }
             }
         }
