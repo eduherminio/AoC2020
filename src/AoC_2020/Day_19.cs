@@ -41,7 +41,7 @@ namespace AoC_2020
 
         private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)
         {
-            var readyRules = new Dictionary<int, Rule>();
+            var replacedRules = new Dictionary<int, Rule>();
 
             var index = 0;
             while (originalRules.Count > 0)
@@ -51,12 +51,12 @@ namespace AoC_2020
                 if (current.IsLiteral)
                 {
                     current.RegexExpression = new StringBuilder(current.Content);
-                    readyRules.Add(current.Id, current);
+                    replacedRules.Add(current.Id, current);
                     originalRules.Remove(current);
                     continue;
                 }
 
-                if (!current.RelatedRules.All(readyRules.ContainsKey))
+                if (!current.RelatedRules.All(replacedRules.ContainsKey))
                 {
                     index = ++index % originalRules.Count;
                     continue;
@@ -68,16 +68,16 @@ namespace AoC_2020
 
                     foreach (var rule in rules.Select(int.Parse))
                     {
-                        var readyRule = readyRules[rule];
+                        var alreadyReplacedRule = replacedRules[rule];
 
-                        if (readyRule.IsLiteral)
+                        if (alreadyReplacedRule.IsLiteral)
                         {
-                            current.RegexExpression.Append(readyRule.RegexExpression);
+                            current.RegexExpression.Append(alreadyReplacedRule.RegexExpression);
                         }
                         else
                         {
                             current.RegexExpression.Append("(?:");
-                            current.RegexExpression.Append(readyRule.RegexExpression);
+                            current.RegexExpression.Append(alreadyReplacedRule.RegexExpression);
                             current.RegexExpression.Append(')');
                         }
                     }
@@ -86,7 +86,7 @@ namespace AoC_2020
                 }
 
                 current.RegexExpression.Remove(current.RegexExpression.Length - 1, 1);
-                readyRules.Add(current.Id, current);
+                replacedRules.Add(current.Id, current);
                 originalRules.Remove(current);
 
                 if (originalRules.Count == 0)
@@ -97,7 +97,7 @@ namespace AoC_2020
                 index = ++index % originalRules.Count;
             }
 
-            return readyRules;
+            return replacedRules;
         }
 
         public override string Solve_2()
@@ -178,15 +178,13 @@ namespace AoC_2020
 
         public class Rule
         {
-            private readonly HashSet<int> _relatedRules;
-
             public int Id { get; }
 
             public string Content { get; set; }
 
             public bool IsLiteral { get; set; }
 
-            public HashSet<int> RelatedRules => _relatedRules;
+            public HashSet<int> RelatedRules { get; }
 
             public StringBuilder RegexExpression { get; set; }
 
@@ -197,7 +195,7 @@ namespace AoC_2020
                 Content = content.Replace("\"", string.Empty);
                 RegexExpression = new StringBuilder();
 
-                _relatedRules = IsLiteral
+                RelatedRules = IsLiteral
                     ? new HashSet<int>(0)
                     : new HashSet<int>(Content
                             .Split(' ', StringSplitOptions.TrimEntries)
