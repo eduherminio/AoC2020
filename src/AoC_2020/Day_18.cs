@@ -168,7 +168,7 @@ namespace AoC_2020
             }
         }
 
-        public enum Operator { None, Plus, Times }
+        internal enum Operator { None, Plus, Times }
 
         internal class Expression
         {
