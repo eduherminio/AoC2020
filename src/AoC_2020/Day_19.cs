@@ -17,10 +17,6 @@ namespace AoC_2020
         {
             (List<Rule> rules, List<string> messages) = ParseInput();
 
-            rules = rules
-                .OrderBy(r => !r.IsLiteral)
-                .ThenBy(r => r.Content.Length).ToList();
-
             Dictionary<int, Rule> readyRules = ReplaceNestedRules(rules);
 
             var rule0 = readyRules[0];
@@ -44,7 +40,7 @@ namespace AoC_2020
             var rule11 = rules.First(r => r.Id == 11);
             rule11.Content = "42 31 | 42 11 31";
 
-            IEnumerable<Regex> regexes = GenerateCombinations(rule8, rule11, rules);
+            var regexes = GenerateCombinations(rule8, rule11, rules);
 
             var matches = new ConcurrentDictionary<string, object?>();  // No concurrent set :(
 
@@ -64,6 +60,10 @@ namespace AoC_2020
 
         private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)
         {
+            originalRules = originalRules
+                .OrderBy(r => !r.IsLiteral)
+                .ThenBy(r => r.Content.Length).ToList();
+
             var replacedRules = new Dictionary<int, Rule>();
 
             var index = 0;
@@ -123,13 +123,13 @@ namespace AoC_2020
             return replacedRules;
         }
 
-        private static IEnumerable<Regex> GenerateCombinations(Rule rule8, Rule rule11, List<Rule> rules)
+        private static IList<Regex> GenerateCombinations(Rule rule8, Rule rule11, List<Rule> rules)
         {
             var rule0 = rules.First(r => r.Id == 0);
 
-            var readyRules = ReplaceNestedRules(rules.Except(new[] { rule0, rule8, rule11 }).ToList());
-            var rule42 = readyRules[42];
-            var rule31 = readyRules[31];
+            var replacedRules = ReplaceNestedRules(rules.Except(new[] { rule0, rule8, rule11 }).ToList());
+            var rule42 = replacedRules[42];
+            var rule31 = replacedRules[31];
 
             var patterns = new HashSet<string>();
 
