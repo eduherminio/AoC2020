@@ -1,22 +1,18 @@
 ﻿using AoCHelper;
-using FileParser;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace AoC_2020
 {
     public class Day_18 : BaseDay
     {
-        private readonly List<Expression> _input;
         private readonly List<string> _reversedLines;
 
         public Day_18()
         {
-            //_input = ParseInput().ToList();
-            _reversedLines = ParseInput2().ToList();
+            _reversedLines = ParseInput().ToList();
         }
 
         public override string Solve_1()
@@ -25,13 +21,25 @@ namespace AoC_2020
 
             foreach (var line in _reversedLines)
             {
-                results += CalculateLine(line);
+                results += CalculateLine(line, (expression) => expression.SolvePart1());
             }
 
             return results.ToString();
         }
 
-        internal static long CalculateLine(string line)
+        public override string Solve_2()
+        {
+            long results = 0;
+
+            foreach (var line in _reversedLines)
+            {
+                results += CalculateLine(line, (expression) => expression.SolvePart2());
+            }
+
+            return results.ToString();
+        }
+
+        internal static long CalculateLine(string line, Func<Expression, long> solveMethod)
         {
             var items = line.Split(" ").ToList();
 
@@ -48,7 +56,7 @@ namespace AoC_2020
                     if (innerRight is null)
                     {
                         innerRight = (parenthesis.Count > 0) ? parenthesis.Peek() : main;
-                        if (innerRight.OperandLeft?.OperandLeft is null && innerRight.OperandLeft?.Value is null)
+                        if (innerRight.OperandLeft!.OperandLeft is null && innerRight.OperandLeft!.Value is null)
                         {
                             innerRight.OperandLeft = new Expression() { Value = n };
                         }
@@ -91,9 +99,9 @@ namespace AoC_2020
                         {
                             innerRight = parenthesis.Peek();
 
-                            if (innerRight.OperandLeft.OperandLeft is null && innerRight.OperandLeft.Value is null)
+                            if (innerRight?.OperandLeft!.OperandLeft is null && innerRight?.OperandLeft!.Value is null)
                             {
-                                innerRight.OperandLeft = expression;
+                                innerRight!.OperandLeft = expression;
                             }
                             else
                             {
@@ -103,7 +111,7 @@ namespace AoC_2020
                                     iter = iter.OperandRight;
                                 }
 
-                                iter.OperandRight = new Expression { OperandLeft = new Expression { Value = expression.Solve() } };
+                                iter.OperandRight = new Expression { OperandLeft = new Expression { Value = solveMethod(expression) } };
                                 innerRight = iter.OperandRight;
                             }
                         }
@@ -125,7 +133,7 @@ namespace AoC_2020
                                 innerRight = iter.OperandRight;
                             }
 
-                            innerRight.OperandLeft = new Expression { Value = expression.Solve() };
+                            innerRight.OperandLeft = new Expression { Value = solveMethod(expression) };
                         }
                     }
                     else
@@ -133,33 +141,15 @@ namespace AoC_2020
                         main.OperandRight = new Expression();
                         innerRight = main.OperandRight;
 
-
                         innerRight.OperandLeft = expression;
                     }
                 }
             }
 
-            var result = main.Solve();
-            Console.WriteLine(result);
+            var result = solveMethod(main);
+            //Console.WriteLine(result);
 
             return result;
-        }
-
-
-
-        public override string Solve_2()
-        {
-            var solution = string.Empty;
-
-            return solution;
-        }
-
-        private IEnumerable<string> ParseInput2()
-        {
-            foreach (var line in File.ReadAllLines(InputFilePath))
-            {
-                yield return ReverseLineAndAddSpaces(line);
-            }
         }
 
         internal static string ReverseLineAndAddSpaces(string line)
@@ -170,28 +160,113 @@ namespace AoC_2020
                 .Replace("/", "( ");
         }
 
+        private IEnumerable<string> ParseInput()
+        {
+            foreach (var line in File.ReadAllLines(InputFilePath))
+            {
+                yield return ReverseLineAndAddSpaces(line);
+            }
+        }
+
         public enum Operator { None, Plus, Times }
 
-        public class Expression
+        internal class Expression
         {
             public long? Value { get; set; }
 
-            public Expression OperandLeft { get; set; }
+            public long? Multiplier { get; set; }
+
+            public Expression? OperandLeft { get; set; }
 
             public Expression? OperandRight { get; set; }
 
             public Operator Operator { get; set; }
 
-            public long Solve()
+            public long SolvePart1()
             {
                 return Operator switch
                 {
-                    Operator.Plus => OperandLeft.Solve() + (OperandRight?.Solve() ?? 0),
-                    Operator.Times => OperandLeft.Solve() * (OperandRight?.Solve() ?? 1),
-                    _ => Value ?? OperandLeft.Solve()// ?? throw new SolvingException()
+                    Operator.Plus => OperandLeft!.SolvePart1() + (OperandRight?.SolvePart1() ?? 0),
+                    Operator.Times => OperandLeft!.SolvePart1() * (OperandRight?.SolvePart1() ?? 1),
+                    _ => Value ?? OperandLeft!.SolvePart1()
                 };
             }
 
+            public long SolvePart2()
+            {
+                long result = 0;
+
+                result += Operator switch
+                {
+                    Operator.None => ((Value ?? 0) * (Multiplier ?? 1)) + (OperandLeft?.SolvePart2() ?? 0),
+                    Operator.Plus => PlusOperator(),
+                    Operator.Times => TimesOperator(),
+                    _ => throw new SolvingException()
+                };
+
+                return result;
+
+                long PlusOperator()
+                {
+                    AddOrCreateValue(OperandRight, (Value ?? 0) + OperandLeft!.SolvePart2());
+
+                    return OperandRight!.SolvePart2();
+                }
+
+                long TimesOperator()
+                {
+                    if (OperandRight?.Operator == Operator.Times)
+                    {
+                        AddOrCreateValue(OperandLeft, Value ?? 0);
+                        AddOrCreateMultiplier(OperandLeft, Multiplier ?? 1);
+
+                        AddOrCreateMultiplier(OperandRight, OperandLeft!.SolvePart2());
+
+                        return OperandRight?.SolvePart2() ?? 1;
+                    }
+                    else
+                    {
+                        AddOrCreateValue(OperandLeft, Value ?? 0);
+                        AddOrCreateMultiplier(OperandLeft, Multiplier ?? 1);
+
+                        return OperandLeft!.SolvePart2() * (OperandRight?.SolvePart2() ?? 1);
+                    }
+                }
+
+                static void AddOrCreateValue(Expression? expression, long value)
+                {
+                    if (expression is null)
+                    {
+                        throw new SolvingException();
+                    }
+
+                    if (expression.Value is null)
+                    {
+                        expression.Value = value;
+                    }
+                    else
+                    {
+                        expression.Value += value;
+                    }
+                }
+
+                static void AddOrCreateMultiplier(Expression? expression, long multiplier)
+                {
+                    if (expression is null)
+                    {
+                        throw new SolvingException();
+                    }
+
+                    if (expression.Multiplier is null)
+                    {
+                        expression.Multiplier = multiplier;
+                    }
+                    else
+                    {
+                        expression.Multiplier *= multiplier;
+                    }
+                }
+            }
         }
     }
 }

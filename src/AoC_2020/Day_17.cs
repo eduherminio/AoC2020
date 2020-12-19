@@ -174,7 +174,6 @@ namespace AoC_2020
 
             return state.Count.ToString();
 
-
             static void Mutate_Set(HashSet<Point> state)
             {
                 var pointsToActivate = new HashSet<Point>();
