@@ -12,21 +12,15 @@ namespace AoC_2020
 {
     public class Day_19 : BaseDay
     {
-        private readonly List<string> _messages;
-        private List<Rule> _rules;
-
-        public Day_19()
-        {
-            (_rules, _messages) = ParseInput();
-        }
-
         public override string Solve_1()
         {
-            _rules = _rules
-                .OrderBy(r => !r.Content.StartsWith("\""))
+            (List<Rule> rules, List<string> messages) = ParseInput();
+
+            rules = rules
+                .OrderBy(r => !r.IsLiteral)
                 .ThenBy(r => r.Content.Length).ToList();
 
-            Dictionary<int, Rule> readyRules = ReplaceNestedRules(_rules);
+            Dictionary<int, Rule> readyRules = ReplaceNestedRules(rules);
 
             var rule0 = readyRules[0];
 
@@ -34,9 +28,42 @@ namespace AoC_2020
 
             var regex = new Regex(regexPattern, RegexOptions.Compiled);
 
-            return _messages
+            return messages
                 .Count(line => regex.IsMatch(line))
                 .ToString();
+        }
+
+        public override string Solve_2()
+        {
+            (List<Rule> rules, List<string> messages) = ParseInput();
+
+            var rule8 = rules.First(r => r.Id == 8);
+            rule8.Content = "42 | 42 8";
+
+            var rule11 = rules.First(r => r.Id == 11);
+            rule11.Content = "42 31 | 42 11 31";
+
+            IEnumerable<Regex> regexes = GenerateCombinations(rule8, rule11, rules);
+
+            var matches = new HashSet<string>();
+
+            regexes.ForEach(regex => messages.ForEach(message =>
+            {
+                if (regex.IsMatch(message))
+                {
+                    matches.Add(message);
+                }
+            }));
+
+            regexes.ForEach(regex => messages.ForEach(message =>
+            {
+                if (regex.IsMatch(message))
+                {
+                    matches.Add(message);
+                }
+            }));
+
+            return matches.Count.ToString();
         }
 
         private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)
@@ -100,19 +127,11 @@ namespace AoC_2020
             return replacedRules;
         }
 
-        public override string Solve_2()
+        private static IEnumerable<Regex> GenerateCombinations(Rule rule8, Rule rule11, List<Rule> rules)
         {
-            _rules = ParseInput().rules;
+            var rule0 = rules.First(r => r.Id == 0);
 
-            var rule8 = _rules.First(r => r.Id == 8);
-            rule8.Content = "42 | 42 8";
-
-            var rule11 = _rules.First(r => r.Id == 11);
-            rule11.Content = "42 31 | 42 11 31";
-
-            var rule0 = _rules.First(r => r.Id == 0);
-
-            var readyRules = ReplaceNestedRules(_rules.Except(new[] { rule0, rule8, rule11 }).ToList());
+            var readyRules = ReplaceNestedRules(rules.Except(new[] { rule0, rule8, rule11 }).ToList());
             var rule42 = readyRules[42];
             var rule31 = readyRules[31];
 
@@ -140,19 +159,7 @@ namespace AoC_2020
                 }
             }
 
-            var regexes = patterns.Select(pattern => new Regex(pattern, RegexOptions.Compiled));
-
-            var matches = new HashSet<string>();
-
-            regexes.ForEach(regex => _messages.ForEach(message =>
-            {
-                if (regex.IsMatch(message))
-                {
-                    matches.Add(message);
-                }
-            }));
-
-            return matches.Count.ToString();
+            return patterns.Select(pattern => new Regex(pattern, RegexOptions.Compiled)).ToList();
         }
 
         private (List<Rule> rules, List<string> messages) ParseInput()
