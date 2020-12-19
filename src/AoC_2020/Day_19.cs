@@ -133,7 +133,7 @@ namespace AoC_2020
 
             var patterns = new HashSet<string>();
 
-            for (int i42 = 2; i42 <= 10; ++i42)
+            for (int i42 = 2; i42 <= 6; ++i42)
             {
                 for (int i31 = 1; i31 < i42; ++i31)
                 {
