@@ -1,10 +1,9 @@
 ﻿using AoCHelper;
 using FileParser;
-using SheepTools;
+using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -27,33 +26,39 @@ namespace AoC_2020
                 .OrderBy(r => !r.Content.StartsWith("\""))
                 .ThenBy(r => r.Content.Length).ToList();
 
+            Dictionary<int, Rule> readyRules = ReplaceNestedRules(_rules);
+
+            var rule0 = readyRules[0];
+
+            var regexPattern = "^" + rule0.RegexExpression.ToString() + "$";
+
+            var regex = new Regex(regexPattern, RegexOptions.Compiled);
+
+            return _messages
+                .Count(line => regex.IsMatch(line))
+                .ToString();
+        }
+
+        private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)
+        {
             var readyRules = new Dictionary<int, Rule>();
 
             var index = 0;
-            while (_rules.Count > 0)
+            while (originalRules.Count > 0)
             {
-                var current = _rules[index];
+                var current = originalRules[index];
 
-                if (current.Content.StartsWith("\""))
+                if (current.IsLiteral)
                 {
-                    current.RegexExpression = new StringBuilder(current.Content.Replace("\"", string.Empty));
-                    current.IsLiteral = true;
+                    current.RegexExpression = new StringBuilder(current.Content);
                     readyRules.Add(current.Id, current);
-                    _rules.Remove(current);
+                    originalRules.Remove(current);
                     continue;
-                }
-
-                if (current.RelatedRules is null)
-                {
-                    current.RelatedRules = new HashSet<int>(current.Content
-                        .Split(' ', StringSplitOptions.TrimEntries)
-                        .Where(str => str != "|")
-                        .Select(int.Parse));
                 }
 
                 if (!current.RelatedRules.All(readyRules.ContainsKey))
                 {
-                    index = ++index % _rules.Count;
+                    index = ++index % originalRules.Count;
                     continue;
                 }
 
@@ -82,32 +87,72 @@ namespace AoC_2020
 
                 current.RegexExpression.Remove(current.RegexExpression.Length - 1, 1);
                 readyRules.Add(current.Id, current);
-                _rules.Remove(current);
+                originalRules.Remove(current);
 
-                if (_rules.Count == 0)
+                if (originalRules.Count == 0)
                 {
                     break;
                 }
 
-                index = ++index % _rules.Count;
+                index = ++index % originalRules.Count;
             }
 
-            var rule0 = readyRules[0];
-
-            var regexPattern = "^" + rule0.RegexExpression.ToString() + "$";
-
-            var regex = new Regex(regexPattern, RegexOptions.Compiled);
-
-            return _messages
-                .Count(line => regex.IsMatch(line))
-                .ToString();
+            return readyRules;
         }
 
         public override string Solve_2()
         {
-            var solution = string.Empty;
+            _rules = ParseInput().rules;
 
-            return solution;
+            var rule8 = _rules.First(r => r.Id == 8);
+            rule8.Content = "42 | 42 8";
+
+            var rule11 = _rules.First(r => r.Id == 11);
+            rule11.Content = "42 31 | 42 11 31";
+
+            var rule0 = _rules.First(r => r.Id == 0);
+
+            var readyRules = ReplaceNestedRules(_rules.Except(new[] { rule0, rule8, rule11 }).ToList());
+            var rule42 = readyRules[42];
+            var rule31 = readyRules[31];
+
+            var patterns = new HashSet<string>();
+
+            for (int i42 = 2; i42 <= 10; ++i42)
+            {
+                for (int i31 = 1; i31 < i42; ++i31)
+                {
+                    var sb = new StringBuilder("^");
+
+                    for (int i = 0; i < i42; ++i)
+                    {
+                        sb.Append("(?:").Append(rule42.RegexExpression).Append(')');
+                    }
+
+                    for (int i = 0; i < i31; ++i)
+                    {
+                        sb.Append("(?:").Append(rule31.RegexExpression).Append(')');
+                    }
+
+                    sb.Append('$');
+
+                    patterns.Add(sb.ToString());
+                }
+            }
+
+            var regexes = patterns.Select(pattern => new Regex(pattern, RegexOptions.Compiled));
+
+            var matches = new HashSet<string>();
+
+            regexes.ForEach(regex => _messages.ForEach(message =>
+            {
+                if (regex.IsMatch(message))
+                {
+                    matches.Add(message);
+                }
+            }));
+
+            return matches.Count.ToString();
         }
 
         private (List<Rule> rules, List<string> messages) ParseInput()
@@ -133,21 +178,31 @@ namespace AoC_2020
 
         public class Rule
         {
+            private readonly HashSet<int> _relatedRules;
+
             public int Id { get; }
 
             public string Content { get; set; }
 
             public bool IsLiteral { get; set; }
 
-            public HashSet<int>? RelatedRules { get; set; }
+            public HashSet<int> RelatedRules => _relatedRules;
 
             public StringBuilder RegexExpression { get; set; }
 
             public Rule(int id, string content)
             {
                 Id = id;
-                Content = content;
+                IsLiteral = content.StartsWith("\"");
+                Content = content.Replace("\"", string.Empty);
                 RegexExpression = new StringBuilder();
+
+                _relatedRules = IsLiteral
+                    ? new HashSet<int>(0)
+                    : new HashSet<int>(Content
+                            .Split(' ', StringSplitOptions.TrimEntries)
+                            .Where(str => str != "|")
+                            .Select(int.Parse));
             }
         }
     }
