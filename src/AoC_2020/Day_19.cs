@@ -1,12 +1,13 @@
 ﻿using AoCHelper;
 using FileParser;
-using SheepTools.Extensions;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace AoC_2020
 {
@@ -45,23 +46,18 @@ namespace AoC_2020
 
             IEnumerable<Regex> regexes = GenerateCombinations(rule8, rule11, rules);
 
-            var matches = new HashSet<string>();
+            var matches = new ConcurrentDictionary<string, object?>();  // No concurrent set :(
 
-            regexes.ForEach(regex => messages.ForEach(message =>
+            Parallel.ForEach(regexes, (regex) =>
             {
-                if (regex.IsMatch(message))
+                Parallel.ForEach(messages, (message) =>
                 {
-                    matches.Add(message);
-                }
-            }));
-
-            regexes.ForEach(regex => messages.ForEach(message =>
-            {
-                if (regex.IsMatch(message))
-                {
-                    matches.Add(message);
-                }
-            }));
+                    if (regex.IsMatch(message))
+                    {
+                        matches.TryAdd(message, null);
+                    }
+                });
+            });
 
             return matches.Count.ToString();
         }
