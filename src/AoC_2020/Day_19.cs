@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AoC_2020
@@ -17,16 +18,15 @@ namespace AoC_2020
         {
             (List<Rule> rules, List<string> messages) = ParseInput();
 
-            Dictionary<int, Rule> readyRules = ReplaceNestedRules(rules);
+            Dictionary<int, Rule> replacedRules = ReplaceNestedRules(rules);
 
-            var rule0 = readyRules[0];
+            var rule0 = replacedRules[0];
 
             var regexPattern = "^" + rule0.RegexExpression.ToString() + "$";
 
             var regex = new Regex(regexPattern, RegexOptions.Compiled);
 
-            return messages
-                .Count(line => regex.IsMatch(line))
+            return messages.Count(line => regex.IsMatch(line))
                 .ToString();
         }
 
@@ -42,20 +42,8 @@ namespace AoC_2020
 
             var regexes = GenerateCombinations(rule8, rule11, rules);
 
-            var matches = new ConcurrentDictionary<string, object?>();  // No concurrent set :(
-
-            Parallel.ForEach(regexes, (regex) =>
-            {
-                Parallel.ForEach(messages, (message) =>
-                {
-                    if (regex.IsMatch(message))
-                    {
-                        matches.TryAdd(message, null);
-                    }
-                });
-            });
-
-            return matches.Count.ToString();
+            return CountMatches_ParallelForEach_Interlock(messages, regexes)
+                .ToString();
         }
 
         private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)
@@ -123,7 +111,14 @@ namespace AoC_2020
             return replacedRules;
         }
 
-        private static IList<Regex> GenerateCombinations(Rule rule8, Rule rule11, List<Rule> rules)
+        /// <summary>
+        /// Compiling the regex makes <see cref="Solve_2"/> 4-6x slower
+        /// </summary>
+        /// <param name="rule8"></param>
+        /// <param name="rule11"></param>
+        /// <param name="rules"></param>
+        /// <returns></returns>
+        internal static List<Regex> GenerateCombinations(Rule rule8, Rule rule11, List<Rule> rules, RegexOptions? options = null)
         {
             var rule0 = rules.First(r => r.Id == 0);
 
@@ -155,10 +150,112 @@ namespace AoC_2020
                 }
             }
 
-            return patterns.Select(pattern => new Regex(pattern, RegexOptions.Compiled)).ToList();
+            return options is null
+                ? patterns.Select(pattern => new Regex(pattern)).ToList()
+                : patterns.Select(pattern => new Regex(pattern, (RegexOptions)options)).ToList();
         }
 
-        private (List<Rule> rules, List<string> messages) ParseInput()
+        /// <summary>
+        /// ~ to <see cref="CountMatches_ParallelForEachConcurrentDictionary"/>
+        /// </summary>
+        /// <param name="messages"></param>
+        /// <param name="regexes"></param>
+        /// <returns></returns>
+        internal static int CountMatches_ParallelForEach_Interlock(IEnumerable<string> messages, IEnumerable<Regex> regexes)
+        {
+            var counter = 0;
+
+            Parallel.ForEach(regexes, (regex) =>
+            {
+                Parallel.ForEach(messages, (message) =>
+                {
+                    if (regex.IsMatch(message))
+                    {
+                        Interlocked.Increment(ref counter);
+                    }
+                });
+            });
+
+            return counter;
+        }
+
+        /// <summary>
+        /// ~ to <see cref="CountMatches_ParallelForEachInterlock"/>
+        /// </summary>
+        /// <param name="messages"></param>
+        /// <param name="regexes"></param>
+        /// <returns></returns>
+        internal static int CountMatches_ParallelForEach_ConcurrentDictionary(IEnumerable<string> messages, IEnumerable<Regex> regexes)
+        {
+            var matches = new ConcurrentDictionary<string, object?>();  // No concurrent set :(
+
+            Parallel.ForEach(regexes, (regex) =>
+            {
+                Parallel.ForEach(messages, (message) =>
+                {
+                    if (regex.IsMatch(message))
+                    {
+                        matches.TryAdd(message, null);
+                    }
+                });
+            });
+
+            return matches.Count;
+        }
+
+        /// <summary>
+        /// Having to iterate over messages before doing it over regexes makes this method
+        /// slower than <see cref="CountMatches_ParallelForEachInterlock"/>.
+        /// It also allocates mucho more memory due to using <<see cref="ParallelLoopState"/>
+        /// </summary>
+        /// <param name="messages"></param>
+        /// <param name="regexes"></param>
+        /// <returns></returns>
+        internal static int CountMatches_ParallelForEach_Interlock_Break(IEnumerable<string> messages, IEnumerable<Regex> regexes)
+        {
+            var counter = 0;
+
+            Parallel.ForEach(messages, (message) =>
+            {
+                Parallel.ForEach(regexes, (regex, state) =>
+                {
+                    if (regex.IsMatch(message))
+                    {
+                        Interlocked.Increment(ref counter);
+                        state.Break();
+                    }
+                });
+            });
+
+            return counter;
+        }
+
+        internal static int CountMatches_NestedLoops(IEnumerable<string> messages, IEnumerable<Regex> regexes)
+        {
+            var counter = 0;
+
+            foreach (var message in messages)
+            {
+                foreach (var regex in regexes)
+                {
+                    if (regex.IsMatch(message))
+                    {
+                        ++counter;
+                        break;
+                    }
+                }
+            }
+
+            return counter;
+        }
+
+        internal static int CountMatches_Linq(IEnumerable<string> messages, IEnumerable<Regex> regexes)
+        {
+            return messages.Count(message =>
+                regexes.Any(regex => regex.IsMatch(message)));
+        }
+
+        internal (List<Rule> rules, List<string> messages) ParseInput()
         {
             var rules = new List<Rule>();
             var messages = new List<string>();
@@ -179,7 +276,7 @@ namespace AoC_2020
             return (rules, messages);
         }
 
-        public class Rule
+        internal class Rule
         {
             public int Id { get; }
 
