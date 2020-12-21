@@ -86,7 +86,14 @@ namespace AoC_2020
                         var previousPiece = solutions[parentIndex].Last();
 
                         var relativePosition = previousPiece.Node.GetSideDirection(sharedSide);
-                        currentNode.Transform(relativePosition, sharedSide);
+                        //currentNode.Transform(relativePosition, sharedSide);
+                        var opposite = (Direction)(((int)relativePosition + 2) % 4);
+                        currentNode = currentNode.Transform(opposite, sharedSide);
+
+                        if (currentNode is null)
+                        {
+                            continue;
+                        }
                         var currentPosition = previousPiece.Position.Move(relativePosition);
 
                         currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
@@ -158,8 +165,8 @@ namespace AoC_2020
 
                 var initialGroup = groups[groupIndex];
 
-                var expandedNodes = 0;
                 bool success = false;
+                var expandedNodes = 0;
 
                 var queue = new ConcurrentQueue<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, -1, string.Empty)));
                 var solutions = new ConcurrentDictionary<int, List<(Tile Node, IntPoint Position)>>();
@@ -177,7 +184,6 @@ namespace AoC_2020
                         ++expandedNodes;
                         tasks.Add(Task.Run(() => Expand(solutionSquareSide, expandedNodes, currentTuple, nodes, queue, solutions)));
                     }
-
 
                     static bool Expand(int solutionSquareSide, int expandedNodes, (Tile Node, int Parent, string SharedSide) currentTuple,
                         List<Tile> nodes,
@@ -200,8 +206,10 @@ namespace AoC_2020
                             var previousPiece = solutions[parentIndex].Last();
 
                             var relativePosition = previousPiece.Node.GetSideDirection(sharedSide);
-                            currentNode.Transform(relativePosition, sharedSide);
-                            // parellel                            //currentNode = currentNode.Transform(relativePosition, sharedSide);  // TODO remove
+
+                            var opposite = (Direction)(((int)relativePosition + 2) % Enum.GetNames(typeof(Direction)).Length);
+                            currentNode = currentNode.Transform(opposite, sharedSide);
+
                             var currentPosition = previousPiece.Position.Move(relativePosition);
 
                             currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
@@ -465,10 +473,10 @@ namespace AoC_2020
                 {
                     _rotated = new Dictionary<Direction, Tile>
                     {
-                        [Direction.Up] = this,
                         [Direction.Left] = RotateAnticlockwise(),
                         [Direction.Right] = RotateClockwise(),
-                        [Direction.Down] = Rotate180()
+                        [Direction.Down] = Rotate180(),
+                        [Direction.Up] = this,
                     };
                 }
 
@@ -500,24 +508,6 @@ namespace AoC_2020
                 throw new SolvingException();
             }
 
-            //private HashSet<string> CalculateSides()
-            //{
-            //    var top = Content[0].ToBitString();
-            //    var bottom = Content.Last().ToBitString();
-            //    var left = new BitArray(Content.Select(arr => arr[0]).ToArray()).ToBitString();
-            //    var right = new BitArray(Content.Select(arr => arr[^1]).ToArray()).ToBitString();
-
-            //    return new HashSet<string>(new[] {
-            //        top, ReverseString(top),
-            //        bottom, ReverseString(bottom),
-            //        left, ReverseString(left),
-            //        right, ReverseString(right)
-            //        //Content[0].ToBitString(),
-            //        //Content.Last().ToBitString(),
-            //        //new BitArray(Content.Select(arr => arr[0]).ToArray()).ToBitString(),
-            //        //new BitArray(Content.Select(arr => arr[^1]).ToArray()).ToBitString()
-            //    });
-            //}
 
             public Tile Transform(Direction direction, string side)
             {
@@ -525,12 +515,14 @@ namespace AoC_2020
                 {
                     _rotated = new Dictionary<Direction, Tile>
                     {
-                        [Direction.Up] = this,
                         [Direction.Left] = RotateAnticlockwise(),
                         [Direction.Right] = RotateClockwise(),
-                        [Direction.Down] = Rotate180()
+                        [Direction.Down] = Rotate180(),
+                        [Direction.Up] = this,
                     };
                 }
+
+                if (GetSideDirection(side) == direction) return this;
 
                 foreach (var rotation in _rotated)
                 {
