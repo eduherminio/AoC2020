@@ -6,7 +6,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,8 +31,9 @@ namespace AoC_2020
             }).ToList();
 
             int solutionSquareSide = Convert.ToInt32(Math.Sqrt(_input.Count));
+            var result = DepthFirstSearch(sideTileList, solutionSquareSide);
             //var result = BreathFirstSearch(sideTileList, solutionSquareSide);
-            var result = BreathFirstSearchConcurrent(sideTileList, solutionSquareSide);
+            //var result = BreathFirstSearchConcurrent(sideTileList, solutionSquareSide);
 
             return result.ToString();
         }
@@ -57,7 +57,6 @@ namespace AoC_2020
 
                 var queue = new Queue<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, -1, string.Empty)));
                 var solutions = new Dictionary<int, List<(Tile Node, IntPoint Position)>>();
-
 
                 while (queue.Count > 0)
                 {
@@ -217,6 +216,10 @@ namespace AoC_2020
                             var opposite = (Direction)(((int)relativePosition + 2) % Enum.GetNames(typeof(Direction)).Length);
                             currentNode = currentNode.Transform(opposite, sharedSide);
 
+                            if (currentNode is null)
+                            {
+                                return false;
+                            }
                             var currentPosition = previousPiece.Position.Move(relativePosition);
 
                             currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
@@ -253,7 +256,10 @@ namespace AoC_2020
 
                             var result = corners.Aggregate((long)1, (total, item) => total * item.Node.Id);
 
+                            Console.WriteLine("***********************************************************************");
                             Console.WriteLine(result);
+                            Console.WriteLine(string.Join(",", finalSolution.Select(s => s.Node.Id)));
+                            Console.WriteLine("***********************************************************************");
 
                             return true;
                         }
@@ -292,9 +298,117 @@ namespace AoC_2020
             throw new SolvingException("No solution found");
         }
 
-        internal static long DepthFirstSearch(List<Tile> nodes)
+        internal static long DepthFirstSearch(List<Tile> nodes, int solutionSquareSide)
         {
-            return 0;
+            var groups = nodes.GroupBy(node => node.Id)
+                .ToList();
+
+            var sw = new Stopwatch();
+            sw.Start();
+
+            for (int groupIndex = 0; groupIndex < groups.Count; ++groupIndex)
+            {
+                Console.WriteLine($"Time: {0.001 * sw.ElapsedMilliseconds:F3} Group: {groups[groupIndex].Key}");
+
+                var initialGroup = groups[groupIndex];
+                var expandedNodes = 0;
+                bool success = false;
+
+                var stack = new Stack<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, -1, string.Empty)));
+                var solutions = new Dictionary<int, List<(Tile Node, IntPoint Position)>>();
+
+                while (stack.Count > 0)
+                {
+                    ++expandedNodes;
+                    if (expandedNodes % 250_000 == 0)
+                    {
+                        Console.WriteLine($"\tTime: {0.001 * sw.ElapsedMilliseconds:F3}");
+                        Console.WriteLine($"\tIndex: {expandedNodes}, stack: {stack.Count}");
+                    }
+
+                    List<(Tile Node, IntPoint Position)> currentSolution;
+                    var currentTuple = stack.Pop();
+
+                    var parentIndex = currentTuple.Parent;
+                    var currentNode = currentTuple.Node;
+                    var sharedSide = currentTuple.SharedSide;
+
+                    // Calculate current solution from parent solution
+                    if (parentIndex == -1)
+                    {
+                        currentSolution = new List<(Tile Node, IntPoint Position)> { (currentNode, new IntPoint(0, 0)) };
+                    }
+                    else
+                    {
+                        var previousPiece = solutions[parentIndex].Last();
+
+                        var relativePosition = previousPiece.Node.GetSideDirection(sharedSide);
+                        var opposite = (Direction)(((int)relativePosition + 2) % 4);
+
+                        currentNode = currentNode.Transform(opposite, sharedSide);
+
+                        if (currentNode is null)
+                        {
+                            continue;
+                        }
+
+                        var currentPosition = previousPiece.Position.Move(relativePosition);
+
+                        currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
+                    }
+
+                    var minX = currentSolution.Min(sol => sol.Position.X);
+                    var maxX = currentSolution.Max(sol => sol.Position.X);
+                    var minY = currentSolution.Min(sol => sol.Position.Y);
+                    var maxY = currentSolution.Max(sol => sol.Position.Y);
+
+                    if (
+                        currentSolution.Select(s => s.Position).Distinct().Count() != currentSolution.Count
+                        || Math.Abs(maxX - minX) >= solutionSquareSide
+                        || Math.Abs(maxY - minY) >= solutionSquareSide)
+                    {
+                        continue;
+                    }
+
+                    solutions.Add(expandedNodes, currentSolution);
+
+                    if (currentSolution.Count == solutionSquareSide * solutionSquareSide)
+                    {
+                        success = true;
+                        break;
+                    }
+
+                    foreach (var candidate in GetCandidates_Efficient(currentNode, expandedNodes, groups, currentSolution))
+                    {
+                        stack.Push(candidate);
+                    }
+                }
+
+                if (success)
+                {
+                    Console.WriteLine($"Total expanded nodes: {expandedNodes}");
+
+                    var finalSolution = solutions[expandedNodes];
+                    var minX = finalSolution.Min(sol => sol.Position.X);
+                    var maxX = finalSolution.Max(sol => sol.Position.X);
+                    var minY = finalSolution.Min(sol => sol.Position.Y);
+                    var maxY = finalSolution.Max(sol => sol.Position.Y);
+
+                    var corners = finalSolution
+                        .Where(sol =>
+                            (sol.Position.X == minX && sol.Position.Y == minY)
+                            || (sol.Position.X == minX && sol.Position.Y == maxY)
+                            || (sol.Position.X == maxX && sol.Position.Y == minY)
+                            || (sol.Position.X == maxX && sol.Position.Y == maxY))
+                        .ToList();
+
+                    Debug.Assert(corners.Count == 4);
+
+                    return corners.Aggregate((long)1, (total, item) => total * item.Node.Id);
+                }
+            }
+
+            throw new SolvingException("No solution found");
         }
 
         internal static IEnumerable<(Tile, int, string)> GetCandidates(Tile currentNode, int index,
