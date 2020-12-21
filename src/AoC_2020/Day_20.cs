@@ -32,8 +32,8 @@ namespace AoC_2020
             }).ToList();
 
             int solutionSquareSide = Convert.ToInt32(Math.Sqrt(_input.Count));
-            var result = BreathFirstSearch(sideTileList, solutionSquareSide);
-            //var result = BreathFirstSearchConcurrent(sideTileList, solutionSquareSide);
+            //var result = BreathFirstSearch(sideTileList, solutionSquareSide);
+            var result = BreathFirstSearchConcurrent(sideTileList, solutionSquareSide);
 
             return result.ToString();
         }
@@ -120,7 +120,8 @@ namespace AoC_2020
                         break;
                     }
 
-                    foreach (var candidate in GetCandidates(currentNode, expandedNodes, nodes, currentSolution))
+                    //foreach (var candidate in GetCandidates(currentNode, expandedNodes, nodes, currentSolution))
+                    foreach (var candidate in GetCandidates_Efficient(currentNode, expandedNodes, groups, currentSolution))
                     {
                         queue.Enqueue(candidate);
                     }
@@ -128,6 +129,8 @@ namespace AoC_2020
 
                 if (success)
                 {
+                    Console.WriteLine($"Total expanded nodes: {expandedNodes}");
+
                     var finalSolution = solutions[expandedNodes];
                     var minX = finalSolution.Min(sol => sol.Position.X);
                     var maxX = finalSolution.Max(sol => sol.Position.X);
@@ -172,6 +175,9 @@ namespace AoC_2020
                 var solutions = new ConcurrentDictionary<int, List<(Tile Node, IntPoint Position)>>();
 
                 var tasks = new List<Task>();
+
+                ThreadPool.SetMaxThreads(8, 4);
+
                 while (!queue.IsEmpty || tasks.Any())
                 {
                     if (expandedNodes % 250_000 == 0)
@@ -182,7 +188,8 @@ namespace AoC_2020
                     if (queue.TryDequeue(out var currentTuple))
                     {
                         ++expandedNodes;
-                        tasks.Add(Task.Run(() => Expand(solutionSquareSide, expandedNodes, currentTuple, nodes, queue, solutions)));
+                        tasks.Add(
+                            Task.Run(() => Expand(solutionSquareSide, expandedNodes, currentTuple, nodes, queue, solutions)));
                     }
 
                     static bool Expand(int solutionSquareSide, int expandedNodes, (Tile Node, int Parent, string SharedSide) currentTuple,
@@ -232,6 +239,22 @@ namespace AoC_2020
 
                         if (currentSolution.Count == solutionSquareSide * solutionSquareSide)
                         {
+                            var finalSolution = solutions[expandedNodes];
+
+                            var corners = finalSolution
+                                .Where(sol =>
+                                    (sol.Position.X == minX && sol.Position.Y == minY)
+                                    || (sol.Position.X == minX && sol.Position.Y == maxY)
+                                    || (sol.Position.X == maxX && sol.Position.Y == minY)
+                                    || (sol.Position.X == maxX && sol.Position.Y == maxY))
+                                .ToList();
+
+                            Debug.Assert(corners.Count == 4);
+
+                            var result = corners.Aggregate((long)1, (total, item) => total * item.Node.Id);
+
+                            Console.WriteLine(result);
+
                             return true;
                         }
 
@@ -274,11 +297,25 @@ namespace AoC_2020
             return 0;
         }
 
-        internal static IEnumerable<(Tile, int, string)> GetCandidates(Tile currentNode, int index, List<Tile> nodes, List<(Tile Node, IntPoint Position)> solution)
+        internal static IEnumerable<(Tile, int, string)> GetCandidates(Tile currentNode, int index,
+            List<Tile> nodes, List<(Tile Node, IntPoint Position)> solution)
         {
             foreach (var candidate in nodes.Where(node => !solution.Select(s => s.Node.Id).Contains(node.Id)))
             {
-                //foreach (var side in candidate.Sides.Intersect(currentNode.Sides))
+                foreach (var side in candidate.Sides.Where(s => currentNode.Sides.Contains(s)))
+                {
+                    yield return (candidate, index, side);
+                }
+            }
+        }
+
+        internal static IEnumerable<(Tile, int, string)> GetCandidates_Efficient(
+            Tile currentNode, int index,
+            List<IGrouping<int, Tile>> nodes, List<(Tile Node, IntPoint Position)> solution)
+        {
+            var usedIds = solution.Select(s => s.Node.Id);
+            foreach (var candidate in nodes.Where(g => !usedIds.Contains(g.Key)).SelectMany(g => g))
+            {
                 foreach (var side in candidate.Sides.Where(s => currentNode.Sides.Contains(s)))
                 {
                     yield return (candidate, index, side);
