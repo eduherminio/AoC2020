@@ -85,9 +85,63 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var solution = string.Empty;
+            var safeIngredients = new HashSet<string>();
+            var finalPairs = new HashSet<(string allergen, string ingredient)>();
 
-            return solution;
+            var allergens = new HashSet<string>(_foods.SelectMany(food => food.Allergens));
+            var ingredients = new HashSet<string>(_foods.SelectMany(food => food.Ingredients));
+
+            var allergensCandidateIngredients = new Dictionary<string, HashSet<string>>(
+                allergens.Select(all => new KeyValuePair<string, HashSet<string>>(all, new HashSet<string>())));
+
+            var foodsByAllergen = new Dictionary<string, HashSet<Food>>(
+                allergens.Select(all => new KeyValuePair<string, HashSet<Food>>(all, new HashSet<Food>())));
+
+            foreach (var food in _foods)
+            {
+                foreach (var allergen in food.Allergens)
+                {
+                    foodsByAllergen[allergen].Add(food);
+                    allergensCandidateIngredients[allergen].AddRange(food.Ingredients);
+                }
+            }
+
+            var potentiallyContaminedFood = allergensCandidateIngredients
+                .SelectMany(pair => pair.Value)
+                .ToList();
+
+            safeIngredients.AddRange(ingredients.Except(potentiallyContaminedFood));
+
+            foreach (var pair in allergensCandidateIngredients)
+            {
+                foreach (var ingredient in pair.Value)
+                {
+                    if (!foodsByAllergen[pair.Key].All(food => food.Ingredients.Contains(ingredient)))
+                    {
+                        pair.Value.Remove(ingredient);
+                    }
+                }
+            }
+
+            bool changes = true;
+            while (changes)
+            {
+                changes = false;
+                foreach (var pair in allergensCandidateIngredients.Where(pair => pair.Value.Count == 1))
+                {
+                    var knownAllergen = pair.Key;
+                    var knownIngredient = pair.Value.Single();
+
+                    finalPairs.Add((allergen: knownAllergen, ingredient: knownIngredient));
+                    allergensCandidateIngredients.Remove(knownAllergen);
+                    allergensCandidateIngredients.ForEach(pair => pair.Value.Remove(knownIngredient));
+                    //_foods.
+                    changes = true;
+                }
+            }
+
+            return string.Join(",",
+                finalPairs.OrderBy(pair => pair.allergen).Select(pair => pair.ingredient));
         }
 
         private IEnumerable<Food> ParseInput()
