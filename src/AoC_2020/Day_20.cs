@@ -3,10 +3,13 @@ using FileParser;
 using SheepTools.Model;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AoC_2020
 {
@@ -30,6 +33,7 @@ namespace AoC_2020
 
             int solutionSquareSide = Convert.ToInt32(Math.Sqrt(_input.Count));
             var result = BreathFirstSearch(sideTileList, solutionSquareSide);
+            //var result = BreathFirstSearchConcurrent(sideTileList, solutionSquareSide);
 
             return result.ToString();
         }
@@ -48,19 +52,13 @@ namespace AoC_2020
 
                 var initialGroup = groups[groupIndex];
 
-                //var index = -1;
                 var expandedNodes = 0;
+                bool success = false;
 
-                //var queue = new List<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, index, string.Empty)));
                 var queue = new Queue<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, -1, string.Empty)));
-
-                //var solutions = new List<List<(Tile Node, IntPoint Position)>>();
                 var solutions = new Dictionary<int, List<(Tile Node, IntPoint Position)>>();
 
-                bool success = false;
-                //index = 0;
 
-                //while (index < queue.Count)
                 while (queue.Count > 0)
                 {
                     ++expandedNodes;
@@ -93,8 +91,6 @@ namespace AoC_2020
 
                         currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
                     }
-                    //solutions.Add(currentSolution);
-                    //solutions.Add(expandedNodes, currentSolution);
 
                     var minX = currentSolution.Min(sol => sol.Position.X);
                     var maxX = currentSolution.Max(sol => sol.Position.X);
@@ -106,9 +102,6 @@ namespace AoC_2020
                         || Math.Abs(maxX - minX) >= solutionSquareSide
                         || Math.Abs(maxY - minY) >= solutionSquareSide)
                     {
-                        //++index;
-                        //currentSolution.Clear();
-                        //currentNode.Tile.MarkAsInvalid();
                         continue;
                     }
 
@@ -120,19 +113,131 @@ namespace AoC_2020
                         break;
                     }
 
-                    //foreach (var candidate in GetCandidates(currentNode, index, nodes, currentSolution))
                     foreach (var candidate in GetCandidates(currentNode, expandedNodes, nodes, currentSolution))
                     {
-                        //queue.Add(candidate);
                         queue.Enqueue(candidate);
                     }
-
-                    //++index;
                 }
 
                 if (success)
                 {
-                    //var finalSolution = solutions[index];
+                    var finalSolution = solutions[expandedNodes];
+                    var minX = finalSolution.Min(sol => sol.Position.X);
+                    var maxX = finalSolution.Max(sol => sol.Position.X);
+                    var minY = finalSolution.Min(sol => sol.Position.Y);
+                    var maxY = finalSolution.Max(sol => sol.Position.Y);
+
+                    var corners = finalSolution
+                        .Where(sol =>
+                            (sol.Position.X == minX && sol.Position.Y == minY)
+                            || (sol.Position.X == minX && sol.Position.Y == maxY)
+                            || (sol.Position.X == maxX && sol.Position.Y == minY)
+                            || (sol.Position.X == maxX && sol.Position.Y == maxY))
+                        .ToList();
+
+                    Debug.Assert(corners.Count == 4);
+
+                    return corners.Aggregate((long)1, (total, item) => total * item.Node.Id);
+                }
+            }
+
+            throw new SolvingException("No solution found");
+        }
+
+        internal static long BreathFirstSearchConcurrent(List<Tile> nodes, int solutionSquareSide)
+        {
+            var groups = nodes.GroupBy(node => node.Id)
+                .ToList();
+
+            // If the selected one is not in a corner, there's no guarantee that going one by one using only the previous one we'll find a way
+            var sw = new Stopwatch();
+            sw.Start();
+            for (int groupIndex = 0; groupIndex < groups.Count; ++groupIndex)
+            {
+                Console.WriteLine($"Time: {0.001 * sw.ElapsedMilliseconds:F3} Group: {groups[groupIndex].Key}");
+
+                var initialGroup = groups[groupIndex];
+
+                var expandedNodes = 0;
+                bool success = false;
+
+                var queue = new ConcurrentQueue<(Tile Node, int Parent, string SharedSide)>(initialGroup.Select(node => (node, -1, string.Empty)));
+                var solutions = new ConcurrentDictionary<int, List<(Tile Node, IntPoint Position)>>();
+
+                var tasks = new List<Task>();
+                while (!queue.IsEmpty || tasks.Any())
+                {
+                    if (expandedNodes % 250_000 == 0)
+                    {
+                        Console.WriteLine($"\tTime: {0.001 * sw.ElapsedMilliseconds:F3}");
+                        Console.WriteLine($"\tIndex: {expandedNodes}, queue: {queue.Count}");
+                    }
+                    if (queue.TryDequeue(out var currentTuple))
+                    {
+                        ++expandedNodes;
+                        tasks.Add(Task.Run(() => Expand(solutionSquareSide, expandedNodes, currentTuple, nodes, queue, solutions)));
+                    }
+
+
+                    static bool Expand(int solutionSquareSide, int expandedNodes, (Tile Node, int Parent, string SharedSide) currentTuple,
+                        List<Tile> nodes,
+                        ConcurrentQueue<(Tile Node, int Parent, string SharedSide)> queue,
+                        ConcurrentDictionary<int, List<(Tile Node, IntPoint Position)>> solutions)
+                    {
+                        List<(Tile Node, IntPoint Position)> currentSolution;
+
+                        var parentIndex = currentTuple.Parent;
+                        var currentNode = currentTuple.Node;
+                        var sharedSide = currentTuple.SharedSide;
+
+                        // Calculate current solution from parent solution
+                        if (parentIndex == -1)
+                        {
+                            currentSolution = new List<(Tile Node, IntPoint Position)> { (currentNode, new IntPoint(0, 0)) };
+                        }
+                        else
+                        {
+                            var previousPiece = solutions[parentIndex].Last();
+
+                            var relativePosition = previousPiece.Node.GetSideDirection(sharedSide);
+                            currentNode.Transform(relativePosition, sharedSide);
+                            // parellel                            //currentNode = currentNode.Transform(relativePosition, sharedSide);  // TODO remove
+                            var currentPosition = previousPiece.Position.Move(relativePosition);
+
+                            currentSolution = solutions[parentIndex].Append((currentNode, currentPosition)).ToList();
+                        }
+
+                        var minX = currentSolution.Min(sol => sol.Position.X);
+                        var maxX = currentSolution.Max(sol => sol.Position.X);
+                        var minY = currentSolution.Min(sol => sol.Position.Y);
+                        var maxY = currentSolution.Max(sol => sol.Position.Y);
+
+                        if (
+                            currentSolution.Select(s => s.Position).Distinct().Count() != currentSolution.Count
+                            || Math.Abs(maxX - minX) >= solutionSquareSide
+                            || Math.Abs(maxY - minY) >= solutionSquareSide)
+                        {
+                            return false;
+                        }
+
+                        solutions.TryAdd(expandedNodes, currentSolution);
+
+                        if (currentSolution.Count == solutionSquareSide * solutionSquareSide)
+                        {
+                            return true;
+                        }
+
+                        foreach (var candidate in GetCandidates(currentNode, expandedNodes, nodes, currentSolution))
+                        {
+                            queue.Enqueue(candidate);
+                        }
+
+                        return false;
+                    }
+                }
+
+                if (success)
+                {
                     var finalSolution = solutions[expandedNodes];
                     var minX = finalSolution.Min(sol => sol.Position.X);
                     var maxX = finalSolution.Max(sol => sol.Position.X);
@@ -165,7 +270,8 @@ namespace AoC_2020
         {
             foreach (var candidate in nodes.Where(node => !solution.Select(s => s.Node.Id).Contains(node.Id)))
             {
-                foreach (var side in candidate.Sides.Intersect(currentNode.Sides))
+                //foreach (var side in candidate.Sides.Intersect(currentNode.Sides))
+                foreach (var side in candidate.Sides.Where(s => currentNode.Sides.Contains(s)))
                 {
                     yield return (candidate, index, side);
                 }
@@ -331,6 +437,8 @@ namespace AoC_2020
 
                 //throw new SolvingException();
 
+
+
                 if (side == _top || side == _topReversed)
                 {
                     return Direction.Up;
@@ -347,6 +455,44 @@ namespace AoC_2020
                 }
 
                 if (side == _right || side == _rightReversed)
+                {
+                    return Direction.Right;
+                }
+
+                throw new SolvingException();
+
+                if (_rotated.Count == 0)
+                {
+                    _rotated = new Dictionary<Direction, Tile>
+                    {
+                        [Direction.Up] = this,
+                        [Direction.Left] = RotateAnticlockwise(),
+                        [Direction.Right] = RotateClockwise(),
+                        [Direction.Down] = Rotate180()
+                    };
+                }
+
+                var tops = _rotated.SelectMany(r => new[] { r.Value._top, r.Value._topReversed });
+                var bottoms = _rotated.SelectMany(r => new[] { r.Value._bottom, r.Value._bottomReversed });
+                var lefts = _rotated.SelectMany(r => new[] { r.Value._left, r.Value._leftReversed });
+                var rights = _rotated.SelectMany(r => new[] { r.Value._right, r.Value._rightReversed });
+
+                if (tops.Contains(side))
+                {
+                    return Direction.Up;
+                }
+
+                if (bottoms.Contains(side))
+                {
+                    return Direction.Down;
+                }
+
+                if (lefts.Contains(side))
+                {
+                    return Direction.Left;
+                }
+
+                if (rights.Contains(side))
                 {
                     return Direction.Right;
                 }
@@ -373,7 +519,7 @@ namespace AoC_2020
             //    });
             //}
 
-            public void Transform(Direction direction, string side)
+            public Tile Transform(Direction direction, string side)
             {
                 if (_rotated.Count == 0)
                 {
@@ -391,8 +537,14 @@ namespace AoC_2020
                     if (rotation.Value.GetSideDirection(side) == direction)
                     {
                         SetBitMatrix(rotation.Value.Content);
+
+                        return rotation.Value;          // TODO remove
                     }
                 }
+
+                return null;
+                //throw new SolvingException();
+
                 //while (GetSideDirection(side) != direction)
                 //{
                 //    SetBitMatrix(_matrix.RotateClockwise());
