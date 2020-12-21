@@ -1,5 +1,6 @@
 ﻿using AoCHelper;
 using FileParser;
+using SheepTools.Extensions;
 using SheepTools.Model;
 using System;
 using System.Collections;
@@ -20,30 +21,24 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            var tileSides =
-                _pieces.ConvertAll(tile => (
-                    tile,
-                    candidateNeighbours: new Dictionary<Tile, HashSet<string>>(),
-                    tile.Sides));
+            var tileWithCandidateNeighbours = _pieces.Select(piece =>
+                 {
+                     var candidateNeighbours = new Dictionary<Tile, HashSet<string>>();
 
-            foreach (var tuple in tileSides)
-            {
-                foreach (var (tile, candidateNeighbours, Sides) in tileSides.Except(new[] { tuple }))
-                {
-                    var sharedSides = Sides.Intersect(tuple.Sides);
+                     foreach (var otherPiece in _pieces.Except(new[] { piece }))
+                     {
+                         var sharedSides = piece.Sides.Intersect(otherPiece.Sides);
+                         if (sharedSides.Any())
+                         {
+                             candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                         }
+                     }
+                     return (piece, candidateNeighbours);
+                 });
 
-                    if (sharedSides.Any())
-                    {
-                        tuple.candidateNeighbours.Add(tile, sharedSides.ToHashSet());
-                    }
-                }
-            }
+            var candidateCorners = tileWithCandidateNeighbours.Where(tuple => tuple.candidateNeighbours.Count == 2);
 
-            var candidateCorners = tileSides.Where(tuple => tuple.candidateNeighbours.Count == 2);
-            var candidateNonCornerSides = tileSides.Where(tuple => tuple.candidateNeighbours.Count == 3);
-            var middle = tileSides.Where(tuple => tuple.candidateNeighbours.Count > 3);
-
-            return candidateCorners.Aggregate((long)1, (total, corner) => total * corner.tile.Id)
+            return candidateCorners.Aggregate((long)1, (total, corner) => total * corner.piece.Id)
                 .ToString();
         }
 
