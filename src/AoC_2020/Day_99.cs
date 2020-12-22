@@ -292,7 +292,7 @@ namespace AoC_2020
         /// <summary>
         /// [Placed] Free directions of a piece that has already been placed
         /// </summary>
-        public ICollection<Direction> FreeDirections { get; set; }
+        public ICollection<Direction> FreeDirections { get; set; } = null!;
 
         /// <summary>
         /// [Placed] Free sides of a piece that has already been placed, each one corresponding to one <see cref="FreeDirections"/>
