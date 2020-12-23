@@ -1,8 +1,6 @@
 ﻿using AoCHelper;
-using FileParser;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -99,10 +97,10 @@ namespace AoC_2020
         {
             const int numberOfCupsToRemove = 3;
             var cups = initialLabelling;
-            LinkedListNode<int> NextNode(LinkedListNode<int> node) => node.Next ?? cups?.First ?? throw new ArgumentNullException(nameof(initialLabelling));
+            LinkedListNode<int> NextNode(LinkedListNode<int> node) => node.Next ?? cups.First!;
 
             var nodeDictionary = new Dictionary<int, LinkedListNode<int>>();
-            var currentNode = cups?.First ?? throw new ArgumentNullException(nameof(initialLabelling));
+            var currentNode = cups.First!;
             for (int i = 0; i < cups.Count; ++i)
             {
                 nodeDictionary.Add(currentNode!.Value, currentNode);
@@ -112,7 +110,7 @@ namespace AoC_2020
             var minLabel = cups.Min();
             var maxLabel = cups.Max();
 
-            var current = cups.Last ?? throw new ArgumentNullException(nameof(initialLabelling));
+            var current = cups.Last!;
 
             for (int turn = 1; turn <= turns; ++turn)
             {
@@ -157,7 +155,7 @@ namespace AoC_2020
         private static List<int> PlayCrubCups_List(List<int> initialLabelling, int turns)
         {
             const int numberOfCupsToRemove = 3;
-            var cups = initialLabelling.ConvertAll(_ => _);
+            var cups = initialLabelling;
 
             var minLabel = cups.Min();
             var maxLabel = cups.Max();
@@ -186,8 +184,6 @@ namespace AoC_2020
                 }
 
                 var destinationCupIndex = cups.IndexOf(destinationCupLabel);
-
-                if (destinationCupIndex == -1) throw new SolvingException();
 
                 for (int i = 0; i < cupsToRemove.Count; ++i)
                 {
@@ -219,12 +215,12 @@ namespace AoC_2020
         {
             const int numberOfCupsToRemove = 3;
             var cups = initialLabelling;
-            LinkedListNode<int> NextNode(LinkedListNode<int> node) => node.Next ?? cups?.First ?? throw new ArgumentNullException(nameof(initialLabelling));
+            LinkedListNode<int> NextNode(LinkedListNode<int> node) => node.Next ?? cups.First!;
 
             var minLabel = cups.Min();
             var maxLabel = cups.Max();
 
-            var current = cups.Last ?? throw new ArgumentNullException(nameof(initialLabelling));
+            var current = cups.Last!;
 
             for (int turn = 1; turn <= turns; ++turn)
             {
