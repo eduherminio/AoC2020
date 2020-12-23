@@ -47,7 +47,7 @@ jobs:
       run: dotnet build -c Release
 
     - name: Run
-      run: dotnet run -c Release --no-build
+      run: dotnet run -c Release --no-build -- 20
       working-directory: ./src/AoC_2020
 
 #  benchmark:

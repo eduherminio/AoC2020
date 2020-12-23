@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using static AoC_2020.Day_20;
+using static AoC_2020.Day_20_initial_attempt;
 
 namespace AoC_2020.Test
 {

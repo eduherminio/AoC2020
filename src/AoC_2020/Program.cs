@@ -1,9 +1,11 @@
-﻿using AoCHelper;
+﻿using AoC_2020;
+using AoCHelper;
 using System.Linq;
 
 if (args.Length == 0)
 {
-    Solver.SolveLast(new SolverConfiguration { ClearConsole = false });
+    //Solver.SolveLast(new SolverConfiguration { ClearConsole = false });
+    Solver.Solve<Day_20>(new SolverConfiguration { ClearConsole = false });
 }
 else if (args.Length == 1 && args[0].Contains("all", System.StringComparison.CurrentCultureIgnoreCase))
 {
