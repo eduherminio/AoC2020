@@ -20,32 +20,32 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            var timesByVisitedPoint = new Dictionary<Point, int>();
+            var blackTiles = GetInitialBlackTiles();
 
-            foreach (var hexagonIndications in _input)
-            {
-                var hexagon = new HexagonalPoint2D(0, 0);
-                foreach (var hexDir in hexagonIndications)
-                {
-                    hexagon = hexagon.Move(hexDir);
-                }
-
-                if (timesByVisitedPoint.ContainsKey(hexagon))
-                {
-                    ++timesByVisitedPoint[hexagon];
-                }
-                else
-                {
-                    timesByVisitedPoint[hexagon] = 1;
-                }
-            }
-
-            var blackTiles = timesByVisitedPoint.Count(p => p.Value % 2 != 0);
-
-            return blackTiles.ToString();
+            return blackTiles.Count.ToString();
         }
 
         public override string Solve_2()
+        {
+            var blackTiles = GetInitialBlackTiles().ToHashSet();
+
+            HashSet<Point> state = blackTiles.ToHashSet();
+
+            var game = new GameOfLife.GameOfLife(
+                state,
+                toDieCondition: (activeNeighboursCount) => activeNeighboursCount is 0 or > 2,
+                toBornCondition: (activeNeighboursCount) => (activeNeighboursCount == 2),
+                numberOfCellsWhichHaveAGivenNeighbourAsNeighbourCondition: (numberOfNeighbours) => numberOfNeighbours >= 2);
+
+            while (game.Iterations < 100)
+            {
+                game.Mutate();
+            }
+
+            return game.AliveCells.Count.ToString();
+        }
+
+        private ICollection<Point> GetInitialBlackTiles()
         {
             var timesByVisitedPoint = new Dictionary<Point, int>();
 
@@ -67,22 +67,10 @@ namespace AoC_2020
                 }
             }
 
-            var blackTiles = timesByVisitedPoint.Where(p => p.Value % 2 != 0);
-            HashSet<Point> state = blackTiles.Select(p => p.Key).ToHashSet();
-
-            var game = new GameOfLife24(state);
-
-            while (game.Iterations < 100)
-            {
-                game.Mutate();
-            }
-
-            return game.AliveCells.Count.ToString();
-
-
-            var solution = string.Empty;
-
-            return solution;
+            return timesByVisitedPoint
+                .Where(p => p.Value % 2 != 0)
+                .Select(pair => pair.Key)
+                .ToList();
         }
 
         private IEnumerable<List<HexDirection>> ParseInput()
@@ -151,88 +139,6 @@ namespace AoC_2020
                 HexDirection.sw => this with { X = this.X - 1, Y = this.Y - 1 },
                 _ => throw new SolvingException()
             };
-        }
-    }
-
-    public class GameOfLife24
-    {
-        private readonly Dictionary<Point, Point[]> _neighboursCache;
-
-        public int Iterations { get; private set; }
-
-        public HashSet<Point> AliveCells { get; }
-
-        public GameOfLife24(HashSet<Point> initialCells)
-        {
-            AliveCells = initialCells;
-            Iterations = 0;
-            _neighboursCache = new Dictionary<Point, Point[]>();
-        }
-
-        public void Mutate()
-        {
-            ++Iterations;
-
-            var cellsToBorn = new HashSet<Point>(AliveCells.Count);
-            var cellsToDie = new HashSet<Point>(AliveCells.Count);
-            var neighbours = new Dictionary<Point, int>(10 * AliveCells.Count);
-
-            foreach (var cell in AliveCells)
-            {
-                var cellNeighbours = MutateCell(cell, true, AliveCells, cellsToBorn, cellsToDie);
-
-                cellNeighbours.ForEach(p =>
-                {
-                    if (neighbours.TryGetValue(p.cell, out var value))
-                    {
-                        neighbours[p.cell] = ++value;
-                    }
-                    else
-                    {
-                        neighbours[p.cell] = 1;
-                    }
-                });
-            }
-
-            foreach (var neighbourPair in neighbours.Where(pair => pair.Value >= 2 && !AliveCells.Contains(pair.Key)))
-            {
-                MutateCell(neighbourPair.Key, false, AliveCells, cellsToBorn, cellsToDie);
-            }
-
-            cellsToBorn.ForEach(p => AliveCells.Add(p));
-            cellsToDie.ForEach(p => AliveCells.Remove(p));
-
-            static IEnumerable<(Point cell, bool isAlive)> MutateCell(Point cell, bool isAlive,
-                HashSet<Point> aliveCells, HashSet<Point> cellsToBorn, HashSet<Point> cellsToDie)
-            {
-                var neighboursWithStatus = cell.Neighbours()
-                    .Select(p => (cell: p, aliveCells.Contains(p)));
-
-                GameOfLife24.MutateCell(cell, isAlive, neighboursWithStatus, cellsToBorn, cellsToDie);
-
-                return neighboursWithStatus;
-            }
-        }
-
-        private static void MutateCell(Point cell, bool isAlive, IEnumerable<(Point cell, bool isActive)> neighbours,
-            HashSet<Point> toBorn, HashSet<Point> toDie)
-        {
-            var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
-
-            if (isAlive)
-            {
-                if (activeNeighboursCount == 0 || activeNeighboursCount > 2)
-                {
-                    toDie.Add(cell);
-                }
-            }
-            else
-            {
-                if (activeNeighboursCount == 2)
-                {
-                    toBorn.Add(cell);
-                }
-            }
         }
     }
 }
