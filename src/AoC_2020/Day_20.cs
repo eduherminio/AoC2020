@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Nodes = System.Collections.Generic.Dictionary<int, System.Collections.Generic.Dictionary<AoC_2020.Piece, System.Collections.Generic.HashSet<string>>>;
 
 namespace AoC_2020
 {
@@ -46,10 +45,30 @@ namespace AoC_2020
         public override string Solve_2()
         {
             //return Part2_Search();
-            var sideLength = Convert.ToInt32(Math.Sqrt(_pieces.Count));
-            var solution = new List<List<Piece>>(sideLength);
 
-            var pieceNeighbours = _pieces.ToDictionary(piece => piece.Id, piece =>
+            var sideLength = Convert.ToInt32(Math.Sqrt(_pieces.Count));
+
+            var pieceNeighbours = ExtractPieceNeighboursDictionary();
+
+            //var corners = pieceNeighbours.Where(node => node.Value.Count == 2).ToList();
+            //Debug.Assert(corners.Count == 4);
+
+            var countourList = ExtractContours(sideLength, pieceNeighbours);
+
+            var orderedContourList = OrderContours(countourList);
+
+            var puzzle = PutTogetherPuzzle(orderedContourList);
+
+            return "";
+        }
+
+        /// <summary>
+        /// Returns a dictionary with each Piece Id as key and a dictionary of possible neighbours Pieces and their possible shared sides as value
+        /// </summary>
+        /// <returns></returns>
+        private Dictionary<int, Dictionary<Piece, HashSet<string>>> ExtractPieceNeighboursDictionary()
+        {
+            return _pieces.ToDictionary(piece => piece.Id, piece =>
             {
                 var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
 
@@ -63,53 +82,478 @@ namespace AoC_2020
                 }
                 return candidateNeighbours;
             });
+        }
 
-            var corners = pieceNeighbours.Where(node => node.Value.Count == 2).ToList();
-            Debug.Assert(corners.Count == 4);
+        /// <summary>
+        /// Extracts all the groups of sides (named contours) by depth level:
+        /// first the real puzzle sides, second the sides if we dont' consider those previous sides, etc.
+        /// </summary>
+        /// <param name="sideLength"></param>
+        /// <param name="pieceNeighbours"></param>
+        /// <returns></returns>
+        private List<List<List<(Piece Piece, IntPoint Position)>>> ExtractContours(int sideLength, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
+        {
+            List<List<List<(Piece Piece, IntPoint Position)>>>? countourList = new();
+            List<KeyValuePair<int, Dictionary<Piece, HashSet<string>>>>? totalSides = new();
 
-            var sides = pieceNeighbours.Where(node => node.Value.Count <= 3).ToList();
+            var contourCount = 0;
+            while (true)
+            {
+                var sides = pieceNeighbours.Except(totalSides).Where(node => node.Value.Count <= 3).ToList();
 
-            Debug.Assert(sides.Count < 4 * sideLength);
-            var sideKeys = sides.ConvertAll(s => s.Key);
+                Debug.Assert(sides.Count == (2 * (sideLength - (2 * contourCount)))
+                    + ((2 * (sideLength - (2 * contourCount) - 2)) > 0
+                        ? (2 * (sideLength - (2 * contourCount) - 2))
+                        : 0));
 
-            var sideNeighbours = _pieces
-                .Where(p => sideKeys.Contains(p.Id))
-                .ToDictionary(piece => piece.Id, piece =>
-                {
-                    var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
+                ++contourCount;
 
-                    foreach (var otherPiece in _pieces.Where(p => sideKeys.Contains(p.Id)).Except(new[] { piece }))
+                var sideKeys = sides.ConvertAll(s => s.Key);
+
+                var sideNeighbours = _pieces
+                    .Where(p => sideKeys.Contains(p.Id))
+                    .ToDictionary(piece => piece.Id, piece =>
                     {
-                        var sharedSides = piece.PossibleSides.Intersect(otherPiece.PossibleSides);
-                        if (sharedSides.Any())
+                        var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
+
+                        foreach (var otherPiece in _pieces.Where(p => sideKeys.Contains(p.Id)).Except(new[] { piece }))
                         {
-                            candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                            var sharedSides = piece.PossibleSides.Intersect(otherPiece.PossibleSides);
+                            if (sharedSides.Any())
+                            {
+                                candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                            }
+                        }
+                        return candidateNeighbours;
+                    });
+
+                if (sideNeighbours.Count == 0)
+                {
+                    break;
+                }
+
+                countourList.Add(GetSides(
+                    pieceNeighbours,
+                    sideNeighbours,
+                    _pieces.Where(p => sideKeys.Contains(p.Id)).ToList(),
+                    sideLength));
+
+                foreach (var pair in pieceNeighbours)
+                {
+                    foreach (var side in countourList.Last())
+                    {
+                        var ids = side.ConvertAll(p => p.Piece.Id);
+
+                        pair.Value.RemoveAll(pair => ids.Contains(pair.Key.Id));
+                    }
+                }
+
+                totalSides.AddRange(sides);
+            }
+
+            return countourList;
+        }
+
+        private static List<List<(Piece Piece, IntPoint Position)>> OrderContours(List<List<List<(Piece Piece, IntPoint Position)>>> countourList)
+        {
+            var result = new List<List<(Piece Piece, IntPoint Position)>>();
+
+            var startingPoint = new IntPoint(0, 0);
+            foreach (var contour in countourList)
+            {
+                result.Add(OrderSides(contour, startingPoint));
+
+                var oppositeCorner = result.Last()[result.Last().Count / 2];
+
+                var xIncrement = oppositeCorner.Position.X > 0
+                    ? 1
+                    : -1;
+
+                var yIncrement = oppositeCorner.Position.Y > 0
+                    ? 1
+                    : -1;
+
+                startingPoint = new IntPoint(startingPoint.X + xIncrement, startingPoint.Y + yIncrement);
+            }
+
+            return result;
+        }
+
+        private static List<(Piece Piece, IntPoint Position)> OrderSides(List<List<(Piece Piece, IntPoint Position)>> contour, IntPoint startingPoint)
+        {
+            List<List<(Piece Piece, IntPoint Position)>> orderedSides = new List<List<(Piece Piece, IntPoint Position)>>();
+
+            List<(Piece Piece, IntPoint Position)> result = new();
+
+            // First side
+            result.Add((contour[0][0].Piece, startingPoint));
+            OrderSide(contour, orderedSides, result);
+
+            // Second side
+            OrderSide(contour, orderedSides, result);
+
+            // Third side
+            OrderSide(contour, orderedSides, result);
+
+            // Fourth side
+            OrderSide(contour, orderedSides, result);
+
+            Debug.Assert(result[0].Piece.Id == result[^1].Piece.Id);
+            Debug.Assert(result[0].Position == result[^1].Position);
+
+            result.RemoveAt(result.Count - 1);
+
+            return result;
+
+            static void OrderSide(
+                List<List<(Piece Piece, IntPoint Position)>> contour,
+                List<List<(Piece Piece, IntPoint Position)>> usedSides,
+                List<(Piece Piece, IntPoint Position)> result)
+            {
+                var corner = result.Last().Piece.Id;
+                var side = contour.Except(usedSides).First(s => s[0].Piece.Id == corner || s[^1].Piece.Id == corner);
+
+                usedSides.Add(side);
+
+                if (corner != side[0].Piece.Id)
+                {
+                    side.Reverse();
+                }
+
+                Direction? initialDirection = null;
+                for (int i = 1; i < side.Count; ++i)
+                {
+                    var previousPiece = result.Last();
+                    var piece = side[i];
+
+                    var sharedBorder = previousPiece.Piece.PossibleSides
+                        .Intersect(piece.Piece.PossibleSides)
+                        .First();
+
+                    var previousPieceDirection = previousPiece.Piece.GetSideDirection(sharedBorder);
+
+                    if (initialDirection is null)
+                    {
+                        initialDirection = previousPieceDirection;
+                    }
+
+                    var thisDirection = (Direction)(((int)(previousPieceDirection) + 2) % 4);
+                    var mutatedPiece = piece.Piece.MutateToHave(sharedBorder, thisDirection);
+                    result.Add((mutatedPiece, previousPiece.Position.Move(previousPieceDirection)));
+
+                    Debug.Assert(previousPieceDirection == initialDirection);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extract sides (Piece groups) from <paramref name="allSidePieces"/>.
+        /// Uses breath first search (BFS)
+        /// </summary>
+        /// <param name="allPiecesWithNeighbours">All nodes</param>
+        /// <param name="sidePiecesWithNeighbours"></param>
+        /// <param name="allSidePieces"></param>
+        /// <param name="sideLength">Total puzzle sideLength</param>
+        /// <returns></returns>
+        internal static List<List<(Piece Piece, IntPoint Position)>> GetSides(
+            Dictionary<int, Dictionary<Piece, HashSet<string>>> allPiecesWithNeighbours,
+            Dictionary<int, Dictionary<Piece, HashSet<string>>> sidePiecesWithNeighbours,
+            List<Piece> allSidePieces, int sideLength)
+        {
+            var corners = allPiecesWithNeighbours.Where(node => node.Value.Count == 2).ToList();
+
+            var possibleSides = new List<List<(Piece Piece, IntPoint Position)>>();
+
+            for (int i = 0; i < corners.Count; ++i)
+            {
+                var initialPiece = allSidePieces.Single(p => p.Id == corners[i].Key);
+
+                var otherCornerIds = corners.ConvertAll(node => node.Key);
+                otherCornerIds.Remove(initialPiece.Id);
+
+                var queue = new Queue<(Piece Piece, int ParentIndex, Direction ParentDirection)>();
+                queue.Enqueue((initialPiece, -1, Direction.Up));
+
+                var solutions = new Dictionary<int, List<(Piece Node, IntPoint Position)>>();
+
+                Piece currentPiece = initialPiece;
+                var currentSolution = new List<(Piece Node, IntPoint Position)> { (currentPiece, new IntPoint(0, 0)) };
+
+                var expandedNodes = 0;
+
+                var childrenToExpand = new Dictionary<int, int>(sidePiecesWithNeighbours.Select(n => new KeyValuePair<int, int>(n.Key, 0)));
+
+                //var sw = new Stopwatch();
+                //sw.Start();
+
+                //var maxDepth = 1;
+
+                while (queue.Count > 0)
+                {
+                    ++expandedNodes;
+                    //if (expandedNodes % 250_000 == 0)
+                    //{
+                    //    Console.WriteLine($"\tTime: {0.001 * sw.ElapsedMilliseconds:F3}");
+                    //    Console.WriteLine($"\tIndex: {expandedNodes}, queue: {queue.Count}");
+                    //}
+
+                    var current = queue.Dequeue();
+
+                    currentPiece = current.Piece;
+                    var parentIndex = current.ParentIndex;
+                    var parentDirection = current.ParentDirection;
+
+                    if (parentIndex != -1)
+                    {
+                        var previousPiece = solutions[parentIndex].Last();
+
+                        var currentPosition = previousPiece.Position.Move(parentDirection);
+
+                        currentSolution = solutions[parentIndex].Append((currentPiece, currentPosition)).ToList();
+
+                        //if (currentSolution.Count > maxDepth)
+                        //{
+                        //    maxDepth = currentSolution.Count;
+                        //    Console.WriteLine($"New depth: {maxDepth}");
+                        //}
+
+                        var minX = currentSolution.Min(sol => sol.Position.X);
+                        var maxX = currentSolution.Max(sol => sol.Position.X);
+                        var minY = currentSolution.Min(sol => sol.Position.Y);
+                        var maxY = currentSolution.Max(sol => sol.Position.Y);
+
+                        bool outsideOfSquare =
+                            Math.Abs(maxX - minX) >= sideLength
+                            || Math.Abs(maxY - minY) >= sideLength
+                            || (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
+                                    && (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
+                            || (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
+                                && (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
+                            || (maxX > 0 && minX < 0)
+                            || (minX < 0 && maxX > 0)
+                            || (maxY > 0 && minY < 0)
+                            || (minY < 0 && maxY > 0);
+
+                        bool overlayingPieces = currentSolution.Select(s => s.Position).Distinct().Count() != currentSolution.Count
+                            || currentSolution.Count > allSidePieces.Count;
+
+                        if (outsideOfSquare || overlayingPieces)
+                        {
+                            continue;
                         }
                     }
-                    return candidateNeighbours;
-                });
 
-            //var sideContacts = sideNeighbours.Select(pair => pair.Value.Count).ToHashSet();
-            //var possibleSides = sideNeighbours.Select(pair => pair.Value.Values.Count).ToHashSet();
+                    solutions.Add(expandedNodes, currentSolution);
 
-            var contour = PlaceSides(
-                pieceNeighbours,
-                sideNeighbours,
-                _pieces.Where(p => sideKeys.Contains(p.Id)).ToList(),
-                sideLength);
+                    if (otherCornerIds.Contains(currentPiece.Id)) // Complete side
+                    {
+                        possibleSides.Add(currentSolution);
+                    }
 
-            foreach (var pair in pieceNeighbours)
-            {
-                foreach (var node in contour)
-                {
-                    pair.Value.RemoveAll(pair => pair.Key.Id == node.Piece.Id);
+                    foreach (var candidate in GetCandidates(currentPiece, expandedNodes, sidePiecesWithNeighbours, currentSolution))
+                    {
+                        queue.Enqueue(candidate);
+                        ++childrenToExpand[currentPiece.Id];
+                    }
                 }
             }
 
-            var nextCountour = pieceNeighbours.Except(sides).Where(node => node.Value.Count <= 3).ToList();
+            var stringIds = possibleSides.Select((side, index) => (
+                    side,
+                    string.Join('|', side.Select(pair => pair.Piece.Id))))
+                .ToList();
 
-            return "";
+            var distinct = new HashSet<string>();
+            var distinctItems = new List<List<(Piece Piece, IntPoint Position)>>();
+            foreach (var pair in stringIds)
+            {
+                if (!distinct.Contains(pair.Item2) && !distinct.Contains(string.Join('|', pair.Item2.Split('|').Reverse())))
+                {
+                    distinct.Add(pair.Item2);
+                    distinctItems.Add(pair.side);
+                }
+            }
+
+            if (distinctItems.Count == 4)
+            {
+                return distinctItems;
+            }
+
+            throw new SolvingException();
         }
+
+        /// <summary>
+        /// Given a possible solution to <see cref="GetSides"/>, extracts the nodes to expand (possible continuations)
+        /// </summary>
+        /// <param name="piece"></param>
+        /// <param name="index"></param>
+        /// <param name="nodes"></param>
+        /// <param name="solution"></param>
+        /// <returns></returns>
+        private static IEnumerable<(Piece Piece, int ParentIndex, Direction ParentDirection)> GetCandidates(Piece piece, int index,
+            Dictionary<int, Dictionary<Piece, HashSet<string>>> nodes,
+            List<(Piece Node, IntPoint Position)> solution)
+        {
+            var freeSides = piece.FreeSides.ToList();
+
+            var usedIds = solution.ConvertAll(sol => sol.Node.Id);
+            foreach (var candidatePiece in nodes[piece.Id].Where(pair => !usedIds.Contains(pair.Key.Id)))
+            {
+                if (candidatePiece.Key.Id == piece.Id) continue;
+
+                var validSharedSideList = freeSides
+                    .Where(pair => candidatePiece.Value.Contains(pair.side));
+
+                foreach (var (direction, side) in validSharedSideList)
+                {
+                    var directionInCandidate = (Direction)(((int)direction + 2) % 4);
+
+                    var mutatedCandidate = candidatePiece.Key.MutateToHave(side, directionInCandidate);
+
+                    Debug.Assert(direction switch
+                    {
+                        Direction.Up => piece.Top == mutatedCandidate.Bottom,
+                        Direction.Down => piece.Bottom == mutatedCandidate.Top,
+                        Direction.Left => piece.Left == mutatedCandidate.Right,
+                        Direction.Right => piece.Right == mutatedCandidate.Left,
+                        _ => false
+                    });
+
+                    yield return (mutatedCandidate, index, direction);
+                }
+            }
+        }
+
+        private List<(Piece Piece, IntPoint Position)> PutTogetherPuzzle(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList)
+        {
+            // Let's start from the original position of the external contour
+            var puzzle = new List<(Piece Piece, IntPoint Position)>(orderedContoursList[0]);
+
+            var pieceNeighbours = ExtractPieceNeighboursDictionary();
+
+            //foreach (var contour in orderedContoursList.Skip(1))
+
+            for (int contourIndex = 1; contourIndex < orderedContoursList.Count; ++contourIndex)
+            {
+                var contour = orderedContoursList[contourIndex];
+
+                bool aligned = false;
+
+                var rotations = 0;
+                while (!aligned)
+                {
+                    ++rotations;
+
+                    if (rotations == contour.Count)
+                    {
+                        contour = FlipPieceGroupUpsideDown(contour);
+                    }
+                    else if (rotations == 2 * contour.Count)
+                    {
+                        contour = FlipPieceGroupLeftRight(contour);
+                    }
+                    else if (rotations == 3 * contour.Count) // Oh boy
+                    {
+                        throw new SolvingException("Something's very wrong :(");
+                    }
+
+                    aligned = true;
+
+                    // Check if all pieces in contour are surrounded by the right neighbours
+                    for (int i = 0; i < contour.Count; ++i)
+                    {
+                        var piece = contour[i];
+                        var position = piece.Position;
+                        var neighboursAlreadInSolution = puzzle.Where(pair => pair.Position.DistanceTo(position) == 1);
+
+                        //Debug.Assert(neighboursAlreadInSolution.Count() >= 1);
+
+                        if (neighboursAlreadInSolution.Any() && neighboursAlreadInSolution.All(neighbour => pieceNeighbours[neighbour.Piece.Id].Any(p => p.Key.Id == piece.Piece.Id)))
+                        {
+                            continue;
+                        }
+
+                        aligned = false;
+                        break;
+                    }
+
+                    // Shifht pieces one position right otherwise
+                    if (!aligned)
+                    {
+                        // Move pieces one position right
+                        var previousPosition = contour[^1].Position;
+                        for (int i = 0; i < contour.Count; ++i)
+                        {
+                            (previousPosition, contour[i]) = (contour[i].Position, (contour[i].Piece, previousPosition));
+                        }
+                    }
+
+                }
+
+                puzzle.AddRange(contour);
+            }
+
+            return puzzle;
+        }
+
+        private static List<(Piece Piece, IntPoint Position)> FlipPieceGroupUpsideDown(List<(Piece Piece, IntPoint Position)> contour)
+        {
+            var newContour = new List<(Piece Piece, IntPoint Position)>();
+
+            var orderedContour = contour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X);
+            var groups = orderedContour.GroupBy(p => p.Position.Y).ToList();
+
+            var mid = groups.Count / 2;
+            for (int i = 0; i < mid; ++i)
+            {
+                var top = groups[i];
+                var bottom = groups[groups.Count - i - 1];
+
+                var maxX = top.Count();
+                for (int x = 0; x < maxX; ++x)
+                {
+                    newContour.Add((top.ElementAt(x).Piece, bottom.ElementAt(x).Position));
+                    newContour.Add((bottom.ElementAt(x).Piece, top.ElementAt(x).Position));
+                }
+            }
+
+            //var original = string.Join(" ", orderedContour.Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
+            //var modified = string.Join(" ", newContour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X)
+            //    .Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
+
+            return newContour;
+        }
+
+        private static List<(Piece Piece, IntPoint Position)> FlipPieceGroupLeftRight(List<(Piece Piece, IntPoint Position)> contour)
+        {
+            var newContour = new List<(Piece Piece, IntPoint Position)>();
+
+            var orderedContour = contour.OrderBy(p => p.Position.X).ThenBy(p => p.Position.Y);
+            var groups = orderedContour.GroupBy(p => p.Position.X).ToList();
+
+            var mid = groups.Count / 2;
+            for (int i = 0; i < mid; ++i)
+            {
+                var top = groups[i];
+                var bottom = groups[groups.Count - i - 1];
+
+                var maxY = top.Count();
+                for (int y = 0; y < maxY; ++y)
+                {
+                    newContour.Add((top.ElementAt(y).Piece, bottom.ElementAt(y).Position));
+                    newContour.Add((bottom.ElementAt(y).Piece, top.ElementAt(y).Position));
+                }
+            }
+
+            //var original = string.Join(" ", orderedContour.Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
+            //var modified = string.Join(" ", newContour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X)
+            //    .Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
+
+            return newContour;
+        }
+
+
+        #region Raw search attempt
 
         private string Part2_Search()
         {
@@ -151,413 +595,7 @@ namespace AoC_2020
             return string.Join(",", orderedPuzzle.Select(s => s.Piece.Id));
         }
 
-        internal static List<(Piece Piece, IntPoint Position)> PlaceSides(Nodes allNodes, Nodes sideNodes, List<Piece> pieces, int sideLength)
-        {
-            var corners = allNodes.Where(node => node.Value.Count == 2).ToList();
-
-            var possibleSides = new List<List<(Piece Piece, IntPoint Position)>>();
-
-            for (int i = 0; i < corners.Count; ++i)
-            {
-                var initialPiece = pieces.Single(p => p.Id == corners[i].Key);
-
-                var otherCornerIds = corners.ConvertAll(node => node.Key);
-                otherCornerIds.Remove(initialPiece.Id);
-
-                var queue = new Queue<(Piece Piece, int ParentIndex, Direction ParentDirection)>();
-                queue.Enqueue((initialPiece, -1, Direction.Up));
-
-                var solutions = new Dictionary<int, List<(Piece Node, IntPoint Position)>>();
-
-                Piece currentPiece = initialPiece;
-                var currentSolution = new List<(Piece Node, IntPoint Position)> { (currentPiece, new IntPoint(0, 0)) };
-
-                var expandedNodes = 0;
-                bool success = false;
-
-                var childrenToExpand = new Dictionary<int, int>(sideNodes.Select(n => new KeyValuePair<int, int>(n.Key, 0)));
-
-                var sw = new Stopwatch();
-                sw.Start();
-
-                var maxDepth = 1;
-
-                while (queue.Count > 0)
-                {
-                    ++expandedNodes;
-                    if (expandedNodes % 250_000 == 0)
-                    {
-                        Console.WriteLine($"\tTime: {0.001 * sw.ElapsedMilliseconds:F3}");
-                        Console.WriteLine($"\tIndex: {expandedNodes}, queue: {queue.Count}");
-                    }
-
-                    var current = queue.Dequeue();
-
-                    currentPiece = current.Piece;
-                    var parentIndex = current.ParentIndex;
-                    var parentDirection = current.ParentDirection;
-
-                    if (parentIndex != -1)
-                    {
-                        var previousPiece = solutions[parentIndex].Last();
-
-                        var currentPosition = previousPiece.Position.Move(parentDirection);
-
-                        currentSolution = solutions[parentIndex].Append((currentPiece, currentPosition)).ToList();
-
-                        if (currentSolution.Count > maxDepth)
-                        {
-                            maxDepth = currentSolution.Count;
-                            Console.WriteLine($"New depth: {maxDepth}");
-                        }
-
-                        var minX = currentSolution.Min(sol => sol.Position.X);
-                        var maxX = currentSolution.Max(sol => sol.Position.X);
-                        var minY = currentSolution.Min(sol => sol.Position.Y);
-                        var maxY = currentSolution.Max(sol => sol.Position.Y);
-
-                        bool outsideOfSquare =
-                            Math.Abs(maxX - minX) >= sideLength
-                            || Math.Abs(maxY - minY) >= sideLength
-                            || (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
-                                    && (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
-                            || (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
-                                && (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
-                            || (maxX > 0 && minX < 0)
-                            || (minX < 0 && maxX > 0)
-                            || (maxY > 0 && minY < 0)
-                            || (minY < 0 && maxY > 0);
-
-                        bool overlayingPieces = currentSolution.Select(s => s.Position).Distinct().Count() != currentSolution.Count
-                            || currentSolution.Count > pieces.Count;
-
-                        if (outsideOfSquare || overlayingPieces)
-                        {
-                            continue;
-                        }
-                    }
-
-                    solutions.Add(expandedNodes, currentSolution);
-
-                    if (otherCornerIds.Contains(currentPiece.Id)) // Complete side
-                    {
-                        possibleSides.Add(currentSolution);
-                    }
-
-                    if (currentSolution.Count == sideNodes.Count)
-                    {
-                        success = true;
-                        break;
-                    }
-
-
-                    foreach (var candidate in GetCandidates(currentPiece, expandedNodes, sideNodes, currentSolution))
-                    {
-                        queue.Enqueue(candidate);
-                        ++childrenToExpand[currentPiece.Id];
-                    }
-                }
-            }
-
-            var sol = new List<(Piece Piece, IntPoint Position)>();
-
-
-            var knownSide = possibleSides.First();
-            var knownCorner = knownSide.First().Piece;
-            var knownCornerSides = knownCorner.FreeSides;
-            var elementNextToKnownCorner = knownSide.ElementAt(1).Piece;
-            var sharedBorder1 = knownCornerSides.Select(s => s.side)
-                    .Intersect(elementNextToKnownCorner.FreeSides.Select(s => s.side))
-                    .Single();
-
-            knownSide.Reverse();
-            sol.AddRange(knownSide);
-
-            /////////////////////////////////////////
-            knownSide = new List<(Piece Piece, IntPoint Position)>();
-
-            var sideCandidateList = possibleSides.Where(side => side.Last().Piece.Id == knownCorner.Id || side.First().Piece.Id == knownCorner.Id);
-            foreach (var candidate in sideCandidateList)
-            {
-                var elementNextToCandidateCorner = candidate.Last().Piece.Id == knownCorner.Id
-                    ? candidate.ElementAt(candidate.Count - 2).Piece
-                    : candidate.ElementAt(1).Piece;
-
-                try
-                {
-                    var sharedBorder2 = knownCornerSides.Select(s => s.side)
-                    .Intersect(elementNextToCandidateCorner.FreeSides.Select(s => s.side))
-                    .Single();
-
-                    var corner1SharedBorder1Direction = knownCorner.GetSideDirection(sharedBorder1);
-                    var corner1SharedBorder2Direction = knownCorner.GetSideDirection(sharedBorder2);
-
-                    if ((int)(corner1SharedBorder1Direction + 1) % 4 == (int)corner1SharedBorder2Direction
-                        || (int)(corner1SharedBorder2Direction + 1) % 4 == (int)corner1SharedBorder1Direction)
-                    {
-                        knownSide = candidate;
-                        break;
-                    }
-                }
-                catch (Exception) { }
-            }
-
-            if (knownSide is null)
-            {
-                throw new SolvingException();
-            }
-
-            if (sol.Last().Piece.Id != knownSide.First().Piece.Id)
-            {
-                knownSide.Reverse();
-            }
-            sol.AddRange(knownSide);
-
-            ////////////////////////
-
-            knownCorner = knownSide.First().Piece.Id == knownCorner.Id
-                ? knownSide.Last().Piece
-                : knownSide.First().Piece;
-
-            knownCornerSides = knownCorner.FreeSides;
-
-            elementNextToKnownCorner = knownCorner.Id == knownSide.First().Piece.Id
-                ? knownSide.ElementAt(1).Piece
-                : knownSide.ElementAt(knownSide.Count - 2).Piece;
-
-            sharedBorder1 = knownCornerSides.Select(s => s.side)
-                    .Intersect(elementNextToKnownCorner.FreeSides.Select(s => s.side))
-                    .Single();
-
-            knownSide = new List<(Piece Piece, IntPoint Position)>();
-
-            sideCandidateList = possibleSides.Where(side => side.Last().Piece.Id == knownCorner.Id || side.First().Piece.Id == knownCorner.Id);
-            foreach (var candidate in sideCandidateList)
-            {
-                var nextToCorner2 = candidate.Last().Piece.Id == knownCorner.Id
-                    ? candidate.ElementAt(candidate.Count - 2).Piece
-                    : candidate.ElementAt(1).Piece;
-                try
-                {
-                    var sharedBorder2 = knownCornerSides.Select(s => s.side)
-                        .Intersect(nextToCorner2.FreeSides.Select(s => s.side))
-                        .Single();
-
-                    var corner1SharedBorder1Direction = knownCorner.GetSideDirection(sharedBorder1);
-                    var corner1SharedBorder2Direction = knownCorner.GetSideDirection(sharedBorder2);
-
-                    if ((int)(corner1SharedBorder1Direction + 1) % 4 == (int)corner1SharedBorder2Direction
-                        || (int)(corner1SharedBorder2Direction + 1) % 4 == (int)corner1SharedBorder1Direction)
-                    {
-                        knownSide = candidate;
-                        break;
-                    }
-                }
-                catch (Exception) { }
-            }
-
-            if (knownSide is null)
-            {
-                throw new SolvingException();
-            }
-
-            if (sol.Last().Piece.Id != knownSide.First().Piece.Id)
-            {
-                knownSide.Reverse();
-            }
-            sol.AddRange(knownSide);
-
-            ///////////////////////////////////
-            ///
-
-            knownCorner = knownSide.First().Piece.Id == knownCorner.Id
-                ? knownSide.Last().Piece
-                : knownSide.First().Piece;
-
-            knownCornerSides = knownCorner.FreeSides;
-
-            elementNextToKnownCorner = knownCorner.Id == knownSide.First().Piece.Id
-                ? knownSide.ElementAt(1).Piece
-                : knownSide.ElementAt(knownSide.Count - 2).Piece;
-
-            sharedBorder1 = knownCornerSides.Select(s => s.side)
-                    .Intersect(elementNextToKnownCorner.FreeSides.Select(s => s.side))
-                    .Single();
-
-            knownSide = new List<(Piece Piece, IntPoint Position)>();
-
-            sideCandidateList = possibleSides.Where(side => side.Last().Piece.Id == knownCorner.Id || side.First().Piece.Id == knownCorner.Id);
-            foreach (var candidate in sideCandidateList)
-            {
-                var nextToCorner2 = candidate.Last().Piece.Id == knownCorner.Id
-                    ? candidate.ElementAt(candidate.Count - 2).Piece
-                    : candidate.ElementAt(1).Piece;
-
-                try
-                {
-                    var sharedBorder2 = knownCornerSides.Select(s => s.side)
-                        .Intersect(nextToCorner2.FreeSides.Select(s => s.side))
-                        .Single();
-
-                    var corner1SharedBorder1Direction = knownCorner.GetSideDirection(sharedBorder1);
-                    var corner1SharedBorder2Direction = knownCorner.GetSideDirection(sharedBorder2);
-
-                    if ((int)(corner1SharedBorder1Direction + 1) % 4 == (int)corner1SharedBorder2Direction
-                        || (int)(corner1SharedBorder2Direction + 1) % 4 == (int)corner1SharedBorder1Direction)
-                    {
-                        knownSide = candidate;
-                        break;
-                    }
-                }
-                catch (Exception) { }
-            }
-
-            if (knownSide is null)
-            {
-                throw new SolvingException();
-            }
-
-            if (sol.Last().Piece.Id != knownSide.First().Piece.Id)
-            {
-                knownSide.Reverse();
-            }
-            sol.AddRange(knownSide);
-
-
-
-
-
-            // Intentando que cuadre
-            //var cornerIds = corners.ConvertAll(p => p.Key);
-            //Direction dir = Direction.Up;
-            //var lastPiece = (Piece: sol.First().Piece, Position: new IntPoint(0, 0));
-
-            //var finalSol = new List<(Piece Piece, IntPoint Position)>()
-            //{
-            //    (sol.First().Piece, new IntPoint(0,0))
-            //};
-
-            //for (int i = 1; i < sol.Count; ++i)
-            //{
-            //    var piece = sol.ElementAt(i);
-
-            //    if (cornerIds.Contains(lastPiece.Piece.Id))
-            //    {
-            //        if (i != 1)
-            //        {
-            //            piece = sol[++i];
-            //        }
-            //        var sharedBorder = lastPiece.Piece.FreeSides.Select(s => s.side)
-            //                .Intersect(piece.Piece.FreeSides.Select(s => s.side))
-            //                .Single();
-
-            //        dir = lastPiece.Piece.GetSideDirection(sharedBorder);   // Down la última???????????????????????
-            //    }
-
-            //    finalSol.Add(lastPiece);
-            //    lastPiece = (sol.ElementAt(i).Piece, lastPiece.Position.Move(dir));
-            //}
-
-
-            var cornerIds = corners.ConvertAll(p => p.Key);
-            Direction dir = Direction.Down;
-            var lastPiece = (Piece: sol.First().Piece, Position: new IntPoint(0, 0));
-
-            var finalSol = new List<(Piece Piece, IntPoint Position)>()
-            {
-                (sol.First().Piece, new IntPoint(0,0))
-            };
-
-            for (int i = 1; i < sol.Count; ++i)
-            {
-                var piece = sol.ElementAt(i);
-
-                if (cornerIds.Contains(lastPiece.Piece.Id))
-                {
-                    if (i != 1)
-                    {
-                        piece = sol[++i];
-                    }
-                    var sharedBorder = lastPiece.Piece.FreeSides.Select(s => s.side)
-                            .Intersect(piece.Piece.FreeSides.Select(s => s.side))
-                            .Single();
-
-                    dir = dir.TurnLeft();
-                }
-
-                finalSol.Add(lastPiece);
-                lastPiece = (sol.ElementAt(i).Piece, lastPiece.Position.Move(dir));
-            }
-
-
-
-            // Alternativa:
-
-            ;
-            return finalSol;
-
-
-            //var idsPositions = possibleSides.SelectMany(side => side.Select(pair => (pair.Node.Id, pair.Position))).ToList();
-
-            //var ids = idsPositions.Select(pair => pair.Id).ToList();
-            //var positions = idsPositions.Select(pair => pair.Position).ToList();
-
-            //// Remove duplicates
-
-            //var stringIds = possibleSides.Select((side, index) => (
-            //    index,
-            //    new string[]
-            //        {
-            //            string.Join('|', side.Select(pair => pair.Node.Id)),
-            //            string.Join('|', side.Select(pair => pair.Node.Id).Reverse()),
-            //        }
-            //    )).ToList();
-
-            //var distinct = new HashSet<string>();
-            //var distinctIndex = new List<int>();
-            //foreach (var pair in stringIds)
-            //{
-            //    if (!distinct.Contains(pair.Item2[0]) && !distinct.Contains(pair.Item2[1]))
-            //    {
-            //        distinct.AddRange(pair.Item2);
-            //        distinctIndex.Add(pair.index);
-            //    }
-            //}
-
-            //var distinctCandidates = possibleSides.Where((_, index) => distinctIndex.Contains(index)).ToList();
-
-
-            //var sol = new List<(Piece Piece, IntPoint Position)>();
-
-            //foreach (var side in distinctCandidates)
-            //{
-            //    var corner1 = side.First();
-
-            //    var lateral1 = distinctCandidates.Except(new[] { side })
-            //        .Where(s => s.First().Node.Id == corner1.Node.Id || s.Last().Node.Id == corner1.Node.Id)
-            //        .Single();      // Let's pray
-
-            //    corner1.Node.
-
-            //    var corner2 = side.Last();
-            //}
-
-
-            //var sols = string.Join(",", solutions[expandedNodes].Select(s => s.Node.Id));
-            //Console.WriteLine(sols);
-            //Console.WriteLine($"Expanded: {expandedNodes}");
-
-            Console.WriteLine("sols");
-
-            //return success
-            //    ? solutions[expandedNodes]
-            //    : throw new SolvingException($"{nameof(DepthFirstSearch)} couldn't find a solution");
-
-            throw new SolvingException();
-        }
-
-
-        internal static List<(Piece Piece, IntPoint Position)> DepthFirstSearch(Nodes nodes, List<Piece> pieces)
+        internal static List<(Piece Piece, IntPoint Position)> DepthFirstSearch(Dictionary<int, Dictionary<Piece, HashSet<string>>> nodes, List<Piece> pieces)
         {
             var sideLength = Convert.ToInt32(Math.Sqrt(nodes.Count));
 
@@ -692,7 +730,7 @@ namespace AoC_2020
                 : throw new SolvingException($"{nameof(DepthFirstSearch)} couldn't find a solution");
         }
 
-        internal static List<(Piece Piece, IntPoint Position)> BreathFirstSearch(Nodes nodes, List<Piece> pieces)
+        internal static List<(Piece Piece, IntPoint Position)> BreathFirstSearch(Dictionary<int, Dictionary<Piece, HashSet<string>>> nodes, List<Piece> pieces)
         {
             var sideLength = Convert.ToInt32(Math.Sqrt(nodes.Count));
 
@@ -834,37 +872,7 @@ namespace AoC_2020
                 : throw new SolvingException($"{nameof(DepthFirstSearch)} couldn't find a solution");
         }
 
-        private static IEnumerable<(Piece Piece, int ParentIndex, Direction ParentDirection)> GetCandidates(Piece piece, int index, Nodes nodes, List<(Piece Node, IntPoint Position)> solution)
-        {
-            var freeSides = piece.FreeSides.ToList();
-
-            var usedIds = solution.ConvertAll(sol => sol.Node.Id);
-            foreach (var candidatePiece in nodes[piece.Id].Where(pair => !usedIds.Contains(pair.Key.Id)))
-            {
-                if (candidatePiece.Key.Id == piece.Id) continue;
-
-                var validSharedSideList = freeSides
-                    .Where(pair => candidatePiece.Value.Contains(pair.side));
-
-                foreach (var (direction, side) in validSharedSideList)
-                {
-                    var directionInCandidate = (Direction)(((int)direction + 2) % 4);
-
-                    var mutatedCandidate = candidatePiece.Key.MutateToHave(side, directionInCandidate);
-
-                    Debug.Assert(direction switch
-                    {
-                        Direction.Up => piece.Top == mutatedCandidate.Bottom,
-                        Direction.Down => piece.Bottom == mutatedCandidate.Top,
-                        Direction.Left => piece.Left == mutatedCandidate.Right,
-                        Direction.Right => piece.Right == mutatedCandidate.Left,
-                        _ => false
-                    });
-
-                    yield return (mutatedCandidate, index, direction);
-                }
-            }
-        }
+        #endregion
 
         private IEnumerable<Piece> ParseInput()
         {
@@ -1186,6 +1194,17 @@ namespace AoC_2020
         {
             char[] charArray = str.ToCharArray();
             Array.Reverse(charArray);
+            return new string(charArray);
+        }
+    }
+
+    public static class StringHelpers
+    {
+        public static string ReverseString(string str)
+        {
+            char[] charArray = str.ToCharArray();
+            Array.Reverse(charArray);
+
             return new string(charArray);
         }
     }
