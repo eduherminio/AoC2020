@@ -9,6 +9,34 @@ namespace AoC_2020.GameOfLife
         public abstract Point[] Neighbours();
     }
 
+    public record Point2D(int X, int Y) : Point
+    {
+        public override Point2D[] Neighbours()
+        {
+            var result = NeighboursIncludingThis().ToList();
+            result.Remove(this);
+
+#if DEBUG
+            Ensure.Count(8, result);
+#endif
+
+            return result.ToArray();
+        }
+
+        private IEnumerable<Point2D> NeighboursIncludingThis()
+        {
+            for (int x = X - 1; x <= X + 1; ++x)
+            {
+                for (int y = Y - 1; y <= Y + 1; ++y)
+                {
+                    yield return new Point2D(x, y);
+                }
+            }
+        }
+
+        public override string ToString() => $"[{X}, {Y}]";
+    }
+
     public record Point3D(int X, int Y, int Z) : Point
     {
         public override Point3D[] Neighbours()
