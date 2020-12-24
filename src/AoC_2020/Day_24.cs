@@ -1,7 +1,8 @@
-﻿using AoC_2020.GameOfLife;
+﻿// Everything about hexagonal coordinates: https://www.redblobgames.com/grids/hexagons/
+
+using AoC_2020.GameOfLife;
 using AoCHelper;
 using SheepTools;
-using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
