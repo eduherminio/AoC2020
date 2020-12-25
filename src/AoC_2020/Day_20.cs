@@ -158,23 +158,10 @@ namespace AoC_2020
         {
             var result = new List<List<(Piece Piece, IntPoint Position)>>();
 
-            //var origin = new IntPoint(0, 0);
-            var startingPoint = new IntPoint(0, 0);
+            var startingPoint = new IntPoint(0, 0); // It doesn't really matter for the inned ones, we'll re-number them anyway
             foreach (var contour in countourList)
             {
                 result.Add(OrderSides(contour, startingPoint));
-
-                var oppositeCorner = result.Last()[result.Last().Count / 2];
-
-                //var xIncrement = oppositeCorner.Position.X > 0
-                //    ? 1
-                //    : -1;
-
-                //var yIncrement = oppositeCorner.Position.Y > 0
-                //    ? 1
-                //    : -1;
-
-                //startingPoint = new IntPoint(origin.X + xIncrement, origin.Y + yIncrement);
             }
 
             return result;
@@ -427,142 +414,122 @@ namespace AoC_2020
 
         private List<(Piece Piece, IntPoint Position)> PutTogetherPuzzle(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList)
         {
-            var previousContour = orderedContoursList[0].OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X).ToList();
-
-            var anotherPointOutThere = previousContour[previousContour.Count / 2].Position;
-
-            var origin = new IntPoint(0, 0);
-            var maxX = previousContour.Max(p => p.Position.X);
-            var minX = previousContour.Min(p => p.Position.X);
-            var xIncrement = anotherPointOutThere.X > 0 ? 1 : -1;
-            var yIncrement = anotherPointOutThere.Y > 0 ? 1 : -1;
-
-            // Let's start from the original position of the external contour
-            var puzzle = new List<(Piece Piece, IntPoint Position)>(previousContour);
-
             var pieceNeighbours = ExtractPieceNeighboursDictionary();
 
-            for (int contourIndex = 1; contourIndex < orderedContoursList.Count; ++contourIndex)
+            // Place pieces in the right place, without worrying about its orientation
+            List<(Piece Piece, IntPoint Position)> puzzle = ComposePuzzleWithUnrotatedPieces(orderedContoursList, pieceNeighbours);
+
+            // Rotate them
+            puzzle = RotatePuzzlePiecesToCompletePuzzle(puzzle, pieceNeighbours);
+
+            return puzzle;
+
+            static List<(Piece Piece, IntPoint Position)> ComposePuzzleWithUnrotatedPieces(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
             {
-                var contour = orderedContoursList[contourIndex].OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X).ToList();
+                var puzzle = new List<(Piece Piece, IntPoint Position)>();
 
-
-                // Opciones:
-                // Hacerlo por coordenadas, mirando cuándo cambian
-                // Hacerlo por la posición del border compartido de la pieza anterior, como en otra función
-
-
-
-                // Assign 'right' positions
-
-
-                // Implementacion 1: caca
-                //var groups = contour.GroupBy(c => c.Position.Y);
-
-                //var first = new IntPoint(origin.X + (contourIndex * xIncrement), origin.Y + (contourIndex * yIncrement));
-                ////var previous = first;
-
-                //var pieceIndex = 0;
-                //int x = 0, y = 0;
-                //foreach (var group in groups)
-                //{
-                //    x = 0;
-                //    foreach (var piece in group)
-                //    {
-                //        var newPosition = new IntPoint(first.X + x, first.Y + y);
-                //        contour[pieceIndex] = (contour[pieceIndex].Piece, newPosition);
-                //        ++pieceIndex;
-                //        x+= xIncrement;
-                //    }
-                //    y+=yIncrement;
-                //}
-
-
-                // Implementacion 1: caca
-
-                //var maxXInContour = maxX - contourIndex;
-                //var minXInContour = minX + contourIndex;
-                //var first = new IntPoint(origin.X + (contourIndex * xIncrement), origin.Y + (contourIndex * yIncrement));
-                //var previous = first;
-                //contour[0] = (contour[0].Piece, first);
-                //for (int i = 1; i < contour.Count; ++i)
-                //{
-                //    var newPosition = new IntPoint(previous.X + xIncrement, previous.Y);
-
-                //    // Wrong condition
-                //    // |
-                //    // v
-                //    if (i == (contour.Count / 4) - 1)     // We don't know if we're incrementing or decrementing it
-                //    {
-                //        newPosition = new IntPoint(first.X, previous.Y + yIncrement);
-                //    }
-
-                //    contour[i] = (contour[i].Piece, newPosition);
-
-                //    previous = newPosition;
-                //}
-
-
-                // $"x: {orderedContoursList[0].Min(p => p.Position.X)}..{orderedContoursList[0].Max(p => p.Position.X)}\ny: {orderedContoursList[0].Min(p => p.Position.Y)}..{orderedContoursList[0].Max(p => p.Position.Y)}"
-                // $"x: {contour.Min(p => p.Position.X)}..{contour.Max(p => p.Position.X)}\ny: {contour.Min(p => p.Position.Y)}..{contour.Max(p => p.Position.Y)}"
-
-
-                bool aligned = false;
-
-                var rotations = 0;
-                while (!aligned)
+                for (int contourIndex = 1; contourIndex < orderedContoursList.Count; ++contourIndex)
                 {
-                    ++rotations;
+                    var contour = orderedContoursList[contourIndex];
+                    var idsToAdd = contour.ConvertAll(p => p.Piece.Id);
 
-                    if (rotations == contour.Count)
+                    var previousContourPiecesCount = orderedContoursList[contourIndex - 1].Count;
+                    var minX = orderedContoursList[contourIndex - 1].Min(p => p.Position.X);
+                    var maxX = orderedContoursList[contourIndex - 1].Max(p => p.Position.X);
+                    var minY = orderedContoursList[contourIndex - 1].Min(p => p.Position.Y);
+                    var maxY = orderedContoursList[contourIndex - 1].Max(p => p.Position.Y);
+
+                    if (contourIndex == 1)
                     {
-                        contour = FlipPieceGroupUpsideDown(contour);
+                        orderedContoursList[0] = orderedContoursList[0]
+                            .OrderBy(p => p.Position.Y)
+                            .ThenBy(p => p.Position.X)
+                            .Select(pair =>
+                                (pair.Piece, new IntPoint(pair.Position.X - minX, pair.Position.Y - minY)))
+                            .ToList();
+
+                        puzzle.AddRange(orderedContoursList[0]);
+
+                        maxX -= minX;
+                        minX = 0;
+                        maxY -= minY;
+                        minY = 0;
                     }
-                    else if (rotations == 2 * contour.Count)    // Oh boy
+
+                    var offset = puzzle.Count - previousContourPiecesCount;
+                    var skiped = 0;
+                    for (int i = 0; i < previousContourPiecesCount; ++i)
                     {
-                        //contour = FlipPieceGroupLeftRight(contour);
-                        throw new SolvingException("Something's very wrong :(");
-                    }
+                        var placedPiece = puzzle[offset + i];
 
-                    aligned = true;
-
-                    // Check if all pieces in contour are surrounded by the right neighbours
-                    for (int i = 0; i < contour.Count; ++i)
-                    {
-                        var piece = contour[i];
-                        var position = piece.Position;
-                        var neighboursAlreadInSolution = puzzle.Where(pair => pair.Position.DistanceTo(position) == 1);
-
-                        //Debug.Assert(neighboursAlreadInSolution.Any());
-
-                        if (neighboursAlreadInSolution.Any()
-                            && neighboursAlreadInSolution.All(neighbour =>
-                                pieceNeighbours[neighbour.Piece.Id].Any(p => p.Key.Id == piece.Piece.Id)))
+                        // Skip corners and one of the squares next to the corner, since corners don't have relationship with this frame
+                        // and there are two pieces next to corners that have relationship to the same square
+                        if (
+                               (placedPiece.Position.X == maxX && placedPiece.Position.Y >= maxY - 1)
+                            || (placedPiece.Position.X == minX && placedPiece.Position.Y <= minY + 1)
+                            || (placedPiece.Position.X == maxX && placedPiece.Position.Y <= minY + 1)
+                            || (placedPiece.Position.X == minX && placedPiece.Position.Y >= maxY - 1))
                         {
+                            ++skiped;
                             continue;
                         }
 
-                        aligned = false;
-                        break;
-                    }
+                        var pieceToAdd = pieceNeighbours[placedPiece.Piece.Id].Keys.Single(p => idsToAdd.Contains(p.Id));
 
-                    // Shifht pieces one position right otherwise
-                    if (!aligned)
-                    {
-                        // Move pieces one position right
-                        var previousPosition = contour[^1].Position;
-                        for (int i = 0; i < contour.Count; ++i)
+                        var x = placedPiece.Position.X;
+                        var y = placedPiece.Position.Y;
+
+                        if (placedPiece.Position.X == minX)
                         {
-                            (previousPosition, contour[i]) = (contour[i].Position, (contour[i].Piece, previousPosition));
+                            x = placedPiece.Position.X + 1;
                         }
+                        else if (placedPiece.Position.X == maxX)
+                        {
+                            x = placedPiece.Position.X - 1;
+                        }
+
+                        if (placedPiece.Position.Y == minY)
+                        {
+                            y = placedPiece.Position.Y + 1;
+                        }
+                        else if (placedPiece.Position.Y == maxY)
+                        {
+                            y = placedPiece.Position.Y - 1;
+                        }
+
+                        orderedContoursList[contourIndex][(i - 1 - skiped) < 0 ? 0 : (i - 1 - skiped)] = (pieceToAdd, new IntPoint(x, y));
+                        puzzle.Add((pieceToAdd, new IntPoint(x, y)));
                     }
 
+                    orderedContoursList[contourIndex] = puzzle.TakeLast(orderedContoursList[contourIndex].Count).ToList();
                 }
 
-                puzzle.AddRange(contour);
+                return puzzle;
             }
 
-            return puzzle;
+            static List<(Piece Piece, IntPoint Position)> RotatePuzzlePiecesToCompletePuzzle(List<(Piece Piece, IntPoint Position)> puzzle, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
+            {
+
+
+
+
+
+                throw new NotImplementedException();
+            }
+        }
+
+
+        private static List<(Piece Piece, IntPoint Position)> ReversePieceGroupPositions(List<(Piece Piece, IntPoint Position)> contour)
+        {
+            var mid = contour.Count / 2;
+            for (int i = 0; i < mid; ++i)
+            {
+                (contour[i], contour[contour.Count - i - 1]) = (
+                    (contour[i].Piece, contour[contour.Count - i - 1].Position),
+                    (contour[contour.Count - i - 1].Piece, contour[i].Position));
+            }
+
+            return contour;
         }
 
         private static List<(Piece Piece, IntPoint Position)> FlipPieceGroupUpsideDown(List<(Piece Piece, IntPoint Position)> contour)
