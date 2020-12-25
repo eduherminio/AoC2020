@@ -74,11 +74,6 @@ namespace AoC_2020
             });
         }
 
-        public string ToBitString()
-        {
-            return string.Join("", Content.Select(b => b.Cast<bool>().Select(bit => bit ? 1 : 0)));
-        }
-
         public override string ToString()
         {
             var sb = new StringBuilder();

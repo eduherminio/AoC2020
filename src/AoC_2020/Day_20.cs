@@ -1,5 +1,6 @@
 ﻿using AoCHelper;
 using FileParser;
+using SheepTools;
 using SheepTools.Extensions;
 using SheepTools.Model;
 using System;
@@ -13,6 +14,10 @@ namespace AoC_2020
     public class Day_20 : BaseDay
     {
         private readonly List<Piece> _pieces;
+        private const string BinarySeaMonsterPattern = @"
+00000000000000000010
+10000110000110000111
+01001001001001001000";
 
         public Day_20()
         {
@@ -59,8 +64,129 @@ namespace AoC_2020
 
             var puzzle = PutTogetherPuzzle(orderedContourList);
 
-            return "";
+            var bitMatrix = RemoveBordersAndJoin(puzzle);
+
+            // Example result -> Need to flip it upside down
+            //var str = new BitMatrix(bitMatrix.FlipUpsideDown()).ToString();
+
+            var allPossibleMatrixes = new List<BitMatrix>
+            {
+                bitMatrix,
+                new BitMatrix(bitMatrix.RotateClockwise()),
+                new BitMatrix(bitMatrix.RotateAnticlockwise()),
+                new BitMatrix(bitMatrix.Rotate180())
+            };
+
+            allPossibleMatrixes.AddRange(allPossibleMatrixes.ConvertAll(matrix => new BitMatrix(matrix.FlipLeftRight())));
+
+            var totalOnes = allPossibleMatrixes[0].ToString().Count(ch => ch == '1');
+            var onesInMonster = BinarySeaMonsterPattern.Count(ch => ch == '1');
+
+            var monsters = FindMonsters(allPossibleMatrixes);
+
+            var onesNotInMonsters = totalOnes - (onesInMonster * monsters);
+
+            return onesNotInMonsters.ToString();
         }
+
+        private static int FindMonsters(List<BitMatrix> allPossibleMatrixes)
+        {
+            var monsterBitArrayHits = new Dictionary<BitArray, int>();
+            var monsterBitArrayList = new List<BitArray>();
+            var monsterLines = BinarySeaMonsterPattern.Split(new[] { "\n", "\r\n" }, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            for (int lineIndex = 0; lineIndex < monsterLines.Count; ++lineIndex)
+            {
+                var line = monsterLines[lineIndex];
+                var boolList = new List<bool>(line.Length);
+
+                for (int x = 0; x < line.Length; ++x)
+                {
+                    if (line[x] == '1')
+                    {
+                        boolList.Add(true);
+                    }
+                    else
+                    {
+                        boolList.Add(false);
+                    }
+                }
+
+                monsterBitArrayList.Add(new BitArray(boolList.ToArray()));
+                monsterBitArrayHits.Add(monsterBitArrayList.Last(), boolList.Count(b => b == true));
+                boolList.Clear();
+            }
+
+            var seaMonsterX = monsterLines[0].Length;
+            var seaMonsterY = monsterLines.Count;          // 3
+
+            var totalSeaMonsters = 0;
+            foreach (var matrix in allPossibleMatrixes)
+            {
+                if (totalSeaMonsters > 0)
+                {
+                    break;
+                }
+
+                int maxY = matrix.Content.Count;
+                int maxX = matrix.Content[0].Count;
+
+                for (int y = 0; y < maxY - seaMonsterY; ++y)
+                {
+                    var lines = new List<string>(seaMonsterY);
+                    for (int localY = 0; localY < seaMonsterY; ++localY)
+                    {
+                        lines.Add(matrix.Content[y + localY].ToBitString());
+                    }
+                    //var matrix1 = matrix.Content[y + 0].ToBitString().AsSpan();
+                    //var matrix2 = matrix.Content[y + 1].ToBitString().AsSpan();
+                    //var matrix3 = matrix.Content[y + 2].ToBitString().AsSpan();
+
+                    for (int x = 0; x < maxX - seaMonsterX; ++x)
+                    {
+                        var seaRegions = new List<string>(seaMonsterY);
+                        for (int localY = 0; localY < seaMonsterY; ++localY)
+                        {
+                            seaRegions.Add(lines[localY].Substring(x, seaMonsterX));
+                        }
+
+                        var seaRegionsBitArrayList = seaRegions.ConvertAll(str => new BitArray(str.Select(c => c == '1').ToArray()));
+
+                        // And them, and the result should be equals to the line of the monster
+                        var monsters =
+                            seaRegionsBitArrayList
+                                .Zip(monsterBitArrayList)
+                                .All(pair =>
+                                {
+                                    var result = pair.First.And(pair.Second);
+
+                                    return result.ToBitString() == pair.Second.ToBitString();
+                                });
+
+                        if (monsters)
+                        {
+                            ++totalSeaMonsters;
+                        }
+                        // seaRegions | bitmonster
+                        //var sea1 = matrix1(x + 0, seaMonsterX);
+                        //var firstLine = new BitArray()
+
+
+
+                        //var contentToSearch =
+                    }
+                }
+
+            }
+
+            if (totalSeaMonsters == 0)
+            {
+                throw new SolvingException();
+            }
+
+            return totalSeaMonsters;
+        }
+
 
         /// <summary>
         /// Returns a dictionary with each Piece Id as key and a dictionary of possible neighbours Pieces and their possible shared sides as value
@@ -101,10 +227,14 @@ namespace AoC_2020
             {
                 var sides = pieceNeighbours.Except(totalSides).Where(node => node.Value.Count <= 3).ToList();
 
-                Debug.Assert(sides.Count == (2 * (sideLength - (2 * contourCount)))
-                    + ((2 * (sideLength - (2 * contourCount) - 2)) > 0
-                        ? (2 * (sideLength - (2 * contourCount) - 2))
-                        : 0));
+                Debug.Assert(
+                    sides.Count ==
+                        (2 * (sideLength - (2 * contourCount)))
+                        + ((2 * (sideLength - (2 * contourCount) - 2)) > 0
+                            ? (2 * (sideLength - (2 * contourCount) - 2))
+                            : 0)
+                    || sides.Single().Value.Count == 0  // Piece in the center
+                            );
 
                 ++contourCount;
 
@@ -131,12 +261,26 @@ namespace AoC_2020
                 {
                     break;
                 }
+                else if (sideNeighbours.Count == 1)
+                {
+                    countourList.Add(new List<List<(Piece Piece, IntPoint Position)>>
+                    {
+                        new List<(Piece Piece, IntPoint Position)>
+                        {
+                            (_pieces.Single(p => p.Id == sideNeighbours.Single().Key), new IntPoint((sideLength / 2) + 1, (sideLength / 2) + 1))
+                        }
+                    });
 
-                countourList.Add(GetSides(
-                    pieceNeighbours,
-                    sideNeighbours,
-                    _pieces.Where(p => sideKeys.Contains(p.Id)).ToList(),
-                    sideLength));
+                    break;
+                }
+                else
+                {
+                    countourList.Add(GetSides(
+                        pieceNeighbours,
+                        sideNeighbours,
+                        _pieces.Where(p => sideKeys.Contains(p.Id)).ToList(),
+                        sideLength));
+                }
 
                 foreach (var pair in pieceNeighbours)
                 {
@@ -169,6 +313,11 @@ namespace AoC_2020
 
         private static List<(Piece Piece, IntPoint Position)> OrderSides(List<List<(Piece Piece, IntPoint Position)>> contour, IntPoint startingPoint)
         {
+            if (contour.Count == 1)
+            {
+                return new[] { contour.First().First() }.ToList();
+            }
+
             List<List<(Piece Piece, IntPoint Position)>> orderedSides = new List<List<(Piece Piece, IntPoint Position)>>();
 
             List<(Piece Piece, IntPoint Position)> result = new();
@@ -420,7 +569,7 @@ namespace AoC_2020
             List<(Piece Piece, IntPoint Position)> puzzle = ComposePuzzleWithUnrotatedPieces(orderedContoursList, pieceNeighbours);
 
             // Rotate them
-            puzzle = RotatePuzzlePiecesToCompletePuzzle(puzzle, pieceNeighbours);
+            puzzle = RotatePuzzlePiecesToCompletePuzzle(puzzle);
 
             return puzzle;
 
@@ -501,92 +650,162 @@ namespace AoC_2020
                         puzzle.Add((pieceToAdd, new IntPoint(x, y)));
                     }
 
+                    if (idsToAdd.Count == 1)
+                    {
+                        puzzle.Remove(puzzle.Last());
+                    }
+
                     orderedContoursList[contourIndex] = puzzle.TakeLast(orderedContoursList[contourIndex].Count).ToList();
                 }
 
                 return puzzle;
             }
 
-            static List<(Piece Piece, IntPoint Position)> RotatePuzzlePiecesToCompletePuzzle(List<(Piece Piece, IntPoint Position)> puzzle, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
+            static List<(Piece Piece, IntPoint Position)> RotatePuzzlePiecesToCompletePuzzle(List<(Piece Piece, IntPoint Position)> puzzle)
             {
+                var orderedPuzzle = puzzle.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X).ToList();
 
+                var pieceNeighbours = orderedPuzzle
+                    .ToDictionary(
+                        pair => pair.Piece.Id,
+                        pair => orderedPuzzle.Where(otherPair => pair.Position.DistanceTo(otherPair.Position) == 1).ToList());
 
+                var solutionIds = new List<int>();
+                var solution = new List<(Piece Piece, IntPoint Position)>();
 
-
-
-                throw new NotImplementedException();
-            }
-        }
-
-
-        private static List<(Piece Piece, IntPoint Position)> ReversePieceGroupPositions(List<(Piece Piece, IntPoint Position)> contour)
-        {
-            var mid = contour.Count / 2;
-            for (int i = 0; i < mid; ++i)
-            {
-                (contour[i], contour[contour.Count - i - 1]) = (
-                    (contour[i].Piece, contour[contour.Count - i - 1].Position),
-                    (contour[contour.Count - i - 1].Piece, contour[i].Position));
-            }
-
-            return contour;
-        }
-
-        private static List<(Piece Piece, IntPoint Position)> FlipPieceGroupUpsideDown(List<(Piece Piece, IntPoint Position)> contour)
-        {
-            var newContour = new List<(Piece Piece, IntPoint Position)>();
-
-            var orderedContour = contour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X);
-            var groups = orderedContour.GroupBy(p => p.Position.Y).ToList();
-
-            var mid = groups.Count / 2;
-            for (int i = 0; i < mid; ++i)
-            {
-                var top = groups[i];
-                var bottom = groups[groups.Count - i - 1];
-
-                var maxX = top.Count();
-                for (int x = 0; x < maxX; ++x)
+                void AddSolution((Piece Piece, IntPoint Position) pair)
                 {
-                    newContour.Add((top.ElementAt(x).Piece, bottom.ElementAt(x).Position));
-                    newContour.Add((bottom.ElementAt(x).Piece, top.ElementAt(x).Position));
+                    solutionIds.Add(pair.Piece.Id);
+                    solution.Add(pair);
                 }
+
+                AddSolution(orderedPuzzle[0]);
+
+                for (int i = 1; i < orderedPuzzle.Count; ++i)
+                {
+                    var currentPiece = orderedPuzzle[i];
+                    var placedNeighbourIds = pieceNeighbours[currentPiece.Piece.Id].Where(n => solutionIds.Contains(n.Piece.Id)).Select(n => n.Piece.Id).ToList();
+                    var placedNeighbours = solution.Where(p => placedNeighbourIds.Contains(p.Piece.Id)).ToList();
+
+                    var candidatePieces = new List<(Piece piece, string sharedSide, (Piece piece, IntPoint position) neighbour)>();
+
+                    foreach (var neighbour in placedNeighbours)
+                    {
+                        var sharedSides = neighbour.Piece.FreeSides.Select(pair => pair.side).Intersect(currentPiece.Piece.PossibleSides);
+
+                        foreach (var sharedSide in sharedSides)
+                        {
+                            var neighbourDirection = neighbour.Piece.FreeSides.Single(pair => pair.side == sharedSide).direction;
+
+                            var ownDirection = GetOppositeDirection(neighbourDirection);
+
+                            var transformedPiece = currentPiece.Piece.MutateToHave(sharedSide, ownDirection);
+                            candidatePieces.Add((transformedPiece, sharedSide, neighbour));
+                        }
+                    }
+
+                    // Choosing those ones that have shared sides with all neighbours, once transformed
+                    var realCandidates = candidatePieces.Where(piece =>
+                        placedNeighbours.All(n =>
+                            piece.piece.FreeSides.Select(pair => pair.side)
+                                .Intersect(n.Piece.FreeSides.Select(pair => pair.side))
+                                .Any()))
+                        .ToList();
+
+                    if (realCandidates.Count == 0)
+                    {
+                        throw new SolvingException(":(");
+                    }
+                    else if (realCandidates.Count == 1)
+                    {
+                        AddSolution((realCandidates[0].piece, currentPiece.Position));
+                    }
+                    else
+                    {
+                        // Rotate and see if they really match
+                        var realRealCandidates = new List<Piece>();
+                        foreach (var candidate in realCandidates)
+                        {
+                            foreach (var neighbour in placedNeighbours.Except(new[] { candidate.neighbour }))
+                            {
+                                var sharedSides = candidate.piece.FreeSides.Select(pair => pair.side).Intersect(neighbour.Item1.FreeSides.Select(pair => pair.side));
+
+                                var sharedPairsAlreadyInPlace = neighbour.Item1.FreeSides.Where(pair => sharedSides.Contains(pair.side));
+
+                                if (sharedPairsAlreadyInPlace.All(pair => candidate.piece.GetSideDirection(pair.side) == GetOppositeDirection(pair.direction)))
+                                {
+                                    realRealCandidates.Add(candidate.piece);
+                                }
+                            }
+                        }
+
+                        AddSolution((realRealCandidates[0], currentPiece.Position));  // Si hay varios, son iguales
+                    }
+                }
+
+                return solution;
             }
-
-            //var original = string.Join(" ", orderedContour.Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
-            //var modified = string.Join(" ", newContour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X)
-            //    .Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
-
-            return newContour;
         }
 
-        //private static List<(Piece Piece, IntPoint Position)> FlipPieceGroupLeftRight(List<(Piece Piece, IntPoint Position)> contour)
-        //{
-        //    var newContour = new List<(Piece Piece, IntPoint Position)>();
+        private BitMatrix RemoveBordersAndJoin(List<(Piece Piece, IntPoint Position)> puzzle)
+        {
+            var sideLength = Convert.ToInt32(Math.Sqrt(puzzle.Count));
+            var pieceSideLength = puzzle[0].Piece.Left.Length;
 
-        //    var orderedContour = contour.OrderBy(p => p.Position.X).ThenBy(p => p.Position.Y);
-        //    var groups = orderedContour.GroupBy(p => p.Position.X).ToList();
+            var solution = new BitMatrix(new List<BitArray>(sideLength));
 
-        //    var mid = groups.Count / 2;
-        //    for (int i = 0; i < mid; ++i)
-        //    {
-        //        var top = groups[i];
-        //        var bottom = groups[groups.Count - i - 1];
+            puzzle = puzzle
+                .OrderByDescending(p => p.Position.Y)   // We want to start from the top left corner.
+                .ThenBy(p => p.Position.X).ToList();
 
-        //        var maxY = top.Count();
-        //        for (int y = 0; y < maxY; ++y)
-        //        {
-        //            newContour.Add((top.ElementAt(y).Piece, bottom.ElementAt(y).Position));
-        //            newContour.Add((bottom.ElementAt(y).Piece, top.ElementAt(y).Position));
-        //        }
-        //    }
+            var prev = puzzle[0].Position;
 
-        //    //var original = string.Join(" ", orderedContour.Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
-        //    //var modified = string.Join(" ", newContour.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X)
-        //    //    .Select(p => $"{p.Position} - {p.Piece.Id}").ToList());
+            var boolRows = new List<List<bool>>(RangeHelpers.GenerateRange(0, pieceSideLength - 3).Select(_ => new List<bool>()));
+            //var boolRows = new List<List<bool>>(RangeHelpers.GenerateRange(0, pieceSideLength - 1).Select(_ => new List<bool>()));    // Not removing anything
 
-        //    return newContour;
-        //}
+            foreach ((Piece piece, IntPoint position) in puzzle)
+            {
+                var rows = piece.Matrix.Content;
+
+                // Comment to not remove anything
+                rows.Remove(rows.First());
+                rows.Remove(rows.Last());
+
+                if (position.Y != prev.Y)
+                {
+                    solution.Content.AddRange(boolRows.Select(l => new BitArray(l.ToArray())));
+                    boolRows.ForEach(row => row.Clear());
+                }
+
+                for (int rowIndex = 0; rowIndex < rows.Count; ++rowIndex)
+                {
+                    var bitArray = rows[rowIndex];
+
+                    //var end = bitArray.Length;        // Not removing anything
+                    //for (int i = 0; i < end; ++i)
+                    //{
+                    //    boolRows[rowIndex].Add(bitArray[i]);
+                    //}
+
+                    var end = bitArray.Length - 1;
+                    for (int i = 1; i < end; ++i)
+                    {
+                        boolRows[rowIndex].Add(bitArray[i]);
+                    }
+                }
+
+                prev = position;
+            }
+
+            solution.Content.AddRange(boolRows.Select(l => new BitArray(l.ToArray())));
+
+            return solution;
+        }
+
+        private static Direction GetOppositeDirection(Direction neighbourDirection)
+        {
+            return (Direction)(((int)neighbourDirection + 2) % 4);
+        }
 
         #region Raw search attempt
 
@@ -928,7 +1147,7 @@ namespace AoC_2020
 
     internal class Piece
     {
-        private BitMatrix _matrix = null!;
+        public BitMatrix Matrix { get; private set; } = null!;
 
         private string _top = null!;
         private string _bottom = null!;
@@ -980,7 +1199,7 @@ namespace AoC_2020
             }
         }
 
-        public List<BitArray> Content => _matrix.Content;
+        public List<BitArray> Content => Matrix.Content;
 
         public Piece(int id, List<BitArray> content)
         {
@@ -990,18 +1209,18 @@ namespace AoC_2020
 
         private void SetBitMatrix(List<BitArray> content)
         {
-            _matrix = new BitMatrix(content);
+            Matrix = new BitMatrix(content);
 
-            _top = _matrix.Content[0].ToBitString();
+            _top = Matrix.Content[0].ToBitString();
             _topReversed = ReverseString(_top);
 
-            _bottom = _matrix.Content.Last().ToBitString();
+            _bottom = Matrix.Content.Last().ToBitString();
             _bottomReversed = ReverseString(_bottom);
 
-            _left = new BitArray(_matrix.Content.Select(arr => arr[0]).ToArray()).ToBitString();
+            _left = new BitArray(Matrix.Content.Select(arr => arr[0]).ToArray()).ToBitString();
             _leftReversed = ReverseString(_left);
 
-            _right = new BitArray(_matrix.Content.Select(arr => arr[^1]).ToArray()).ToBitString();
+            _right = new BitArray(Matrix.Content.Select(arr => arr[^1]).ToArray()).ToBitString();
             _rightReversed = ReverseString(_right);
 
             PossibleSides = new HashSet<string> {
@@ -1210,19 +1429,19 @@ namespace AoC_2020
             throw new SolvingException($"Id {Id} => MutateToHave(Side {side}, Direction {direction})");
         }
 
-        public Piece RotateClockwise() => new Piece(Id, _matrix.RotateClockwise());
+        public Piece RotateClockwise() => new Piece(Id, Matrix.RotateClockwise());
 
-        public Piece RotateAnticlockwise() => new Piece(Id, _matrix.RotateAnticlockwise());
+        public Piece RotateAnticlockwise() => new Piece(Id, Matrix.RotateAnticlockwise());
 
-        public Piece Rotate180() => new Piece(Id, _matrix.Rotate180());
+        public Piece Rotate180() => new Piece(Id, Matrix.Rotate180());
 
-        public Piece FlipUpsideDown() => new Piece(Id, _matrix.FlipUpsideDown());
+        public Piece FlipUpsideDown() => new Piece(Id, Matrix.FlipUpsideDown());
 
-        public Piece FlipLeftRight() => new Piece(Id, _matrix.FlipLeftRight());
+        public Piece FlipLeftRight() => new Piece(Id, Matrix.FlipLeftRight());
 
         public override string ToString()
         {
-            return _matrix.ToString();
+            return Matrix.ToString();
         }
 
         internal static string ReverseString(string str)
