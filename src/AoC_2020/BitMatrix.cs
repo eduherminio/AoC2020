@@ -6,7 +6,7 @@ using System.Text;
 
 namespace AoC_2020
 {
-    internal class BitMatrix
+    public class BitMatrix
     {
         public List<BitArray> Content { get; set; }
 
@@ -15,7 +15,7 @@ namespace AoC_2020
             Content = content;
         }
 
-        public virtual List<BitArray> RotateClockwise()
+        public virtual BitMatrix RotateClockwise()
         {
             var length = Content.Count;
             var result = new List<BitArray>(length);
@@ -28,10 +28,10 @@ namespace AoC_2020
                     .ToArray()));
             }
 
-            return result;
+            return new BitMatrix(result);
         }
 
-        public virtual List<BitArray> RotateAnticlockwise()
+        public virtual BitMatrix RotateAnticlockwise()
         {
             var length = Content[0].Count;
             var result = new List<BitArray>(length);
@@ -43,24 +43,24 @@ namespace AoC_2020
                     .ToArray()));
             }
 
-            return result;
+            return new BitMatrix(result);
         }
 
-        public virtual List<BitArray> Rotate180()
+        public virtual BitMatrix Rotate180()
         {
-            return new BitMatrix(FlipUpsideDown()).FlipLeftRight();
+            return FlipUpsideDown().FlipLeftRight();
         }
 
-        public virtual List<BitArray> FlipUpsideDown()
+        public virtual BitMatrix FlipUpsideDown()
         {
-            return Enumerable.Reverse(Content).ToList();
+            return new BitMatrix(Enumerable.Reverse(Content).ToList());
         }
 
-        public virtual List<BitArray> FlipLeftRight()
+        public virtual BitMatrix FlipLeftRight()
         {
             var length = Content[0].Count;
 
-            return Content.ConvertAll(original =>
+            return new BitMatrix(Content.ConvertAll(original =>
             {
                 int mid = length / 2;
                 var newRow = new BitArray(original);
@@ -71,7 +71,7 @@ namespace AoC_2020
                 }
 
                 return newRow;
-            });
+            }));
         }
 
         public override string ToString()
@@ -90,43 +90,6 @@ namespace AoC_2020
             sb.Append(Environment.NewLine);
 
             return sb.ToString();
-        }
-    }
-
-    public static class BitArrayExtensions
-    {
-        public static string ToBitString(this BitArray array)
-        {
-            return string.Join("", array.Cast<bool>().Select(bit => bit ? 1 : 0));
-        }
-
-        public static BitArray Reverse(this BitArray array)
-        {
-            var result = new BitArray(array);
-
-            int length = array.Length;
-            int mid = (length / 2);
-
-            for (int i = 0; i < mid; i++)
-            {
-                result[length - i - 1] = array[i];
-                result[i] = array[length - i - 1];
-            }
-
-            return result;
-        }
-    }
-
-    public class BitArrayComparer : IEqualityComparer<BitArray>
-    {
-        public bool Equals(BitArray? x, BitArray? y)
-        {
-            return x?.ToBitString() == y?.ToBitString();
-        }
-
-        public int GetHashCode(BitArray obj)
-        {
-            return obj.ToBitString().GetHashCode();
         }
     }
 }

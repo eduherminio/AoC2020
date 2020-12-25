@@ -9,11 +9,11 @@ namespace AoC_2020.Test
     {
         [Theory]
         [MemberData(nameof(FlipUpsideDownData))]
-        public void FlipUpsideDown(List<BitArray> original, List<BitArray> expectedResult)
+        public void FlipUpsideDown(BitMatrix original, BitMatrix expectedResult)
         {
-            var result = new BitMatrix(original).FlipUpsideDown();
+            var result = original.FlipUpsideDown();
 
-            foreach (var (first, second) in expectedResult.Zip(result))
+            foreach (var (first, second) in expectedResult.Content.Zip(result.Content))
             {
                 Assert.Equal(first, second);
             }
@@ -21,11 +21,11 @@ namespace AoC_2020.Test
 
         [Theory]
         [MemberData(nameof(FlipLeftRightData))]
-        public void FlipLeftRight(List<BitArray> original, List<BitArray> expectedResult)
+        public void FlipLeftRight(BitMatrix original, BitMatrix expectedResult)
         {
-            var result = new BitMatrix(original).FlipLeftRight();
+            var result = original.FlipLeftRight();
 
-            foreach (var (first, second) in expectedResult.Zip(result))
+            foreach (var (first, second) in expectedResult.Content.Zip(result.Content))
             {
                 Assert.Equal(first, second);
             }
@@ -33,11 +33,11 @@ namespace AoC_2020.Test
 
         [Theory]
         [MemberData(nameof(RotateClockwiseData))]
-        public void RotateClockwise(List<BitArray> original, List<BitArray> expectedResult)
+        public void RotateClockwise(BitMatrix original, BitMatrix expectedResult)
         {
-            var result = new BitMatrix(original).RotateClockwise();
+            var result = original.RotateClockwise();
 
-            foreach (var (first, second) in expectedResult.Zip(result))
+            foreach (var (first, second) in expectedResult.Content.Zip(result.Content))
             {
                 Assert.Equal(first, second);
             }
@@ -45,11 +45,11 @@ namespace AoC_2020.Test
 
         [Theory]
         [MemberData(nameof(RotateAnticlockwiseData))]
-        public void RotateAnticlockwise(List<BitArray> original, List<BitArray> expectedResult)
+        public void RotateAnticlockwise(BitMatrix original, BitMatrix expectedResult)
         {
-            var result = new BitMatrix(original).RotateAnticlockwise();
+            var result = original.RotateAnticlockwise();
 
-            foreach (var (first, second) in expectedResult.Zip(result))
+            foreach (var (first, second) in expectedResult.Content.Zip(result.Content))
             {
                 Assert.Equal(first, second);
             }
@@ -57,11 +57,11 @@ namespace AoC_2020.Test
 
         [Theory]
         [MemberData(nameof(Rotate180Data))]
-        public void Rotate180(List<BitArray> original, List<BitArray> expectedResult)
+        public void Rotate180(BitMatrix original, BitMatrix expectedResult)
         {
-            var result = new BitMatrix(original).Rotate180();
+            var result = original.Rotate180();
 
-            foreach (var (first, second) in expectedResult.Zip(result))
+            foreach (var (first, second) in expectedResult.Content.Zip(result.Content))
             {
                 Assert.Equal(first, second);
             }
@@ -71,38 +71,38 @@ namespace AoC_2020.Test
         {
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, true, false }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, true, true }),
                     new BitArray( new [] { false, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true }),
                     new BitArray( new [] { true, true, true }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, true, false })
-                }
+                })
             };
 
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, true, false }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { false, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, true, false })
-                }
+                })
             };
         }
 
@@ -110,38 +110,38 @@ namespace AoC_2020.Test
         {
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, true, false }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, true }),
                     new BitArray( new [] { true , false, false })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, true, true}),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, true }),
                     new BitArray( new [] { false, false, true })
-                }
+                })
             };
 
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, true, false, false }),
                     new BitArray( new [] { false, false, true, false }),
                     new BitArray( new [] { false, true, true, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true, true }),
                     new BitArray( new [] { false, true, false, false }),
                     new BitArray( new [] { true, true, true, false })
-                }
+                })
             };
         }
 
@@ -149,38 +149,38 @@ namespace AoC_2020.Test
         {
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, true }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { false, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true}),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, true })
-                }
+                })
             };
 
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, true, false }),
                     new BitArray( new [] { false, true, false, true}),
                     new BitArray( new [] { false, false, true, true }),
                     new BitArray( new [] { true, true, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, false, true }),
                     new BitArray( new [] { true, false, true, false }),
                     new BitArray( new [] { false, true, false, true }),
                     new BitArray( new [] { true, true, true, false })
-                }
+                })
             };
         }
 
@@ -188,38 +188,38 @@ namespace AoC_2020.Test
         {
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true}),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, true }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { false, false, true })
-                }
+                })
             };
 
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, false, true }),
                     new BitArray( new [] { true, false, true, false }),
                     new BitArray( new [] { false, true, false, true }),
                     new BitArray( new [] { true, true, true, false })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, true, false }),
                     new BitArray( new [] { false, true, false, true}),
                     new BitArray( new [] { false, false, true, true }),
                     new BitArray( new [] { true, true, false, true })
-                }
+                })
             };
         }
 
@@ -227,38 +227,38 @@ namespace AoC_2020.Test
         {
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, false, true}),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, true })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, true }),
                     new BitArray( new [] { false, false, false }),
                     new BitArray( new [] { true, false, false })
-                }
+                })
             };
 
             yield return new object[]
             {
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { true, false, false, false }),
                     new BitArray( new [] { true, false, true, false }),
                     new BitArray( new [] { false, true, false, true }),
                     new BitArray( new [] { true, true, true, false })
-                },
+                }),
 
-                new List<BitArray>
+                new BitMatrix(new List<BitArray>
                 {
                     new BitArray( new [] { false, true, true, true}),
                     new BitArray( new [] { true, false, true, false}),
                     new BitArray( new [] { false, true, false, true }),
                     new BitArray( new [] { false, false, false, true })
-                }
+                })
             };
         }
     }

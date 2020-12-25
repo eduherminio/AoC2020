@@ -19,6 +19,8 @@ namespace AoC_2020
 10000110000110000111
 01001001001001001000";
 
+        private int SideLength => Convert.ToInt32(Math.Sqrt(_pieces.Count));
+
         public Day_20()
         {
             _pieces = ParseInput().ToList();
@@ -43,22 +45,19 @@ namespace AoC_2020
 
             var candidateCorners = pieceWithCandidateNeighbours.Where(tuple => tuple.candidateNeighbours.Count == 2);
 
+            Debug.Assert(candidateCorners.Count() == 4);
+
             return candidateCorners.Aggregate((long)1, (total, corner) => total * corner.piece.Id)
                 .ToString();
         }
 
         public override string Solve_2()
         {
-            //return Part2_Search();
-
-            var sideLength = Convert.ToInt32(Math.Sqrt(_pieces.Count));
-
             var pieceNeighbours = ExtractPieceNeighboursDictionary();
 
-            //var corners = pieceNeighbours.Where(node => node.Value.Count == 2).ToList();
-            //Debug.Assert(corners.Count == 4);
+            Debug.Assert(pieceNeighbours.Count(node => node.Value.Count == 2) == 4);
 
-            var countourList = ExtractContours(sideLength, pieceNeighbours);
+            var countourList = ExtractContours(SideLength, pieceNeighbours);
 
             var orderedContourList = OrderContours(countourList);
 
@@ -72,12 +71,12 @@ namespace AoC_2020
             var allPossibleMatrixes = new List<BitMatrix>
             {
                 bitMatrix,
-                new BitMatrix(bitMatrix.RotateClockwise()),
-                new BitMatrix(bitMatrix.RotateAnticlockwise()),
-                new BitMatrix(bitMatrix.Rotate180())
+                bitMatrix.RotateClockwise(),
+                bitMatrix.RotateAnticlockwise(),
+                bitMatrix.Rotate180()
             };
 
-            allPossibleMatrixes.AddRange(allPossibleMatrixes.ConvertAll(matrix => new BitMatrix(matrix.FlipLeftRight())));
+            allPossibleMatrixes.AddRange(allPossibleMatrixes.ConvertAll(matrix => matrix.FlipLeftRight()));
 
             var totalOnes = allPossibleMatrixes[0].ToString().Count(ch => ch == '1');
             var onesInMonster = BinarySeaMonsterPattern.Count(ch => ch == '1');
@@ -87,93 +86,6 @@ namespace AoC_2020
             var onesNotInMonsters = totalOnes - (onesInMonster * monsters);
 
             return onesNotInMonsters.ToString();
-        }
-
-        private static int FindMonsters(List<BitMatrix> allPossibleMatrixes)
-        {
-            var monsterBitArrayHits = new Dictionary<BitArray, int>();
-            var monsterBitArrayList = new List<BitArray>();
-            var monsterLines = BinarySeaMonsterPattern.Split(new[] { "\n", "\r\n" }, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
-
-            for (int lineIndex = 0; lineIndex < monsterLines.Count; ++lineIndex)
-            {
-                var line = monsterLines[lineIndex];
-                var boolList = new List<bool>(line.Length);
-
-                for (int x = 0; x < line.Length; ++x)
-                {
-                    if (line[x] == '1')
-                    {
-                        boolList.Add(true);
-                    }
-                    else
-                    {
-                        boolList.Add(false);
-                    }
-                }
-
-                monsterBitArrayList.Add(new BitArray(boolList.ToArray()));
-                monsterBitArrayHits.Add(monsterBitArrayList.Last(), boolList.Count(b => b));
-                boolList.Clear();
-            }
-
-            var seaMonsterX = monsterLines[0].Length;
-            var seaMonsterY = monsterLines.Count;          // 3
-
-            var totalSeaMonsters = 0;
-            foreach (var matrix in allPossibleMatrixes)
-            {
-                if (totalSeaMonsters > 0)
-                {
-                    break;
-                }
-
-                int maxY = matrix.Content.Count;
-                int maxX = matrix.Content[0].Count;
-
-                for (int y = 0; y < maxY - seaMonsterY; ++y)
-                {
-                    var lines = new List<string>(seaMonsterY);
-                    for (int localY = 0; localY < seaMonsterY; ++localY)
-                    {
-                        lines.Add(matrix.Content[y + localY].ToBitString());
-                    }
-
-                    for (int x = 0; x < maxX - seaMonsterX; ++x)
-                    {
-                        var seaRegions = new List<string>(seaMonsterY);
-                        for (int localY = 0; localY < seaMonsterY; ++localY)
-                        {
-                            seaRegions.Add(lines[localY].Substring(x, seaMonsterX));
-                        }
-
-                        var seaRegionsBitArrayList = seaRegions.ConvertAll(str => new BitArray(str.Select(c => c == '1').ToArray()));
-
-                        // And them, and the result should be equals to the line of the monster
-                        var monsters =
-                            seaRegionsBitArrayList
-                                .Zip(monsterBitArrayList)
-                                .All(pair =>
-                                {
-                                    var result = pair.First.And(pair.Second);
-
-                                    return result.ToBitString() == pair.Second.ToBitString();
-                                });
-
-                        if (monsters)
-                        {
-                            ++totalSeaMonsters;
-                        }
-                    }
-                }
-            }
-
-            if (totalSeaMonsters == 0)
-            {
-                throw new SolvingException();
-            }
-
-            return totalSeaMonsters;
         }
 
         /// <summary>
@@ -215,14 +127,19 @@ namespace AoC_2020
             {
                 var sides = pieceNeighbours.Except(totalSides).Where(node => node.Value.Count <= 3).ToList();
 
+                // 44 -> 12 x 2 + 10 x 2
+                // 36 -> 10 x 2 + 8 x 2
+                // 28 ->  8 x 2 + 6 x 2
+                // 20 ->  6 x 2 + 4 x 2
+                // 12 ->  4 x 2 + 2 x 2
+                //  2 ->  2 x 2 + 0 x 2 (not -1 x 2, careful)
                 Debug.Assert(
                     sides.Count ==
                         (2 * (sideLength - (2 * contourCount)))
                         + ((2 * (sideLength - (2 * contourCount) - 2)) > 0
                             ? (2 * (sideLength - (2 * contourCount) - 2))
                             : 0)
-                    || sides.Single().Value.Count == 0  // Piece in the center
-                            );
+                    || sides.Single().Value.Count == 0);  // Middle piece
 
                 ++contourCount;
 
@@ -301,7 +218,7 @@ namespace AoC_2020
 
         private static List<(Piece Piece, IntPoint Position)> OrderSides(List<List<(Piece Piece, IntPoint Position)>> contour, IntPoint startingPoint)
         {
-            if (contour.Count == 1)
+            if (contour.Count == 1) // Middle piece
             {
                 return new[] { contour[0][0] }.ToList();
             }
@@ -362,7 +279,7 @@ namespace AoC_2020
                         initialDirection = previousPieceDirection;
                     }
 
-                    var thisDirection = (Direction)(((int)(previousPieceDirection) + 2) % 4);
+                    var thisDirection = previousPieceDirection.Opposite();
                     var mutatedPiece = piece.Piece.MutateToHave(sharedBorder, thisDirection);
                     result.Add((mutatedPiece, previousPiece.Position.Move(previousPieceDirection)));
 
@@ -573,7 +490,7 @@ namespace AoC_2020
                     var minY = orderedContoursList[contourIndex - 1].Min(p => p.Position.Y);
                     var maxY = orderedContoursList[contourIndex - 1].Max(p => p.Position.Y);
 
-                    if (contourIndex == 1)
+                    if (contourIndex == 1)  // Convert to positive values
                     {
                         orderedContoursList[0] = orderedContoursList[0]
                             .OrderBy(p => p.Position.Y)
@@ -682,7 +599,7 @@ namespace AoC_2020
                         {
                             var neighbourDirection = neighbour.Piece.FreeSides.Single(pair => pair.side == sharedSide).direction;
 
-                            var ownDirection = GetOppositeDirection(neighbourDirection);
+                            var ownDirection = neighbourDirection.Opposite();
 
                             var transformedPiece = currentPiece.Piece.MutateToHave(sharedSide, ownDirection);
                             candidatePieces.Add((transformedPiece, sharedSide, neighbour));
@@ -717,7 +634,7 @@ namespace AoC_2020
 
                                 var sharedPairsAlreadyInPlace = neighbour.Item1.FreeSides.Where(pair => sharedSides.Contains(pair.side));
 
-                                if (sharedPairsAlreadyInPlace.All(pair => candidate.piece.GetSideDirection(pair.side) == GetOppositeDirection(pair.direction)))
+                                if (sharedPairsAlreadyInPlace.All(pair => candidate.piece.GetSideDirection(pair.side) == pair.direction.Opposite()))
                                 {
                                     realRealCandidates.Add(candidate.piece);
                                 }
@@ -734,10 +651,7 @@ namespace AoC_2020
 
         private static BitMatrix RemoveBordersAndJoin(List<(Piece Piece, IntPoint Position)> puzzle)
         {
-            var sideLength = Convert.ToInt32(Math.Sqrt(puzzle.Count));
-            var pieceSideLength = puzzle[0].Piece.Left.Length;
-
-            var solution = new BitMatrix(new List<BitArray>(sideLength));
+            var solution = new BitMatrix(new List<BitArray>(Convert.ToInt32(Math.Sqrt(puzzle.Count))));
 
             puzzle = puzzle
                 .OrderByDescending(p => p.Position.Y)   // We want to start from the top left corner.
@@ -745,15 +659,14 @@ namespace AoC_2020
 
             var prev = puzzle[0].Position;
 
-            var boolRows = new List<List<bool>>(RangeHelpers.GenerateRange(0, pieceSideLength - 3).Select(_ => new List<bool>()));
+            var boolRows = new List<List<bool>>(RangeHelpers.GenerateRange(0, puzzle[0].Piece.Left.Length - 3).Select(_ => new List<bool>()));
             //var boolRows = new List<List<bool>>(RangeHelpers.GenerateRange(0, pieceSideLength - 1).Select(_ => new List<bool>()));    // Not removing anything
 
             foreach ((Piece piece, IntPoint position) in puzzle)
             {
-                var rows = piece.Matrix.Content;
+                var rows = piece.Content;
 
-                // Comment to not remove anything
-                rows.Remove(rows[0]);
+                rows.Remove(rows[0]);   // Comment to not remove anything
                 rows.Remove(rows.Last());
 
                 if (position.Y != prev.Y)
@@ -787,9 +700,78 @@ namespace AoC_2020
             return solution;
         }
 
-        private static Direction GetOppositeDirection(Direction neighbourDirection)
+        private static int FindMonsters(List<BitMatrix> allPossibleMatrixes)
         {
-            return (Direction)(((int)neighbourDirection + 2) % 4);
+            var monsterBitArrayHits = new Dictionary<BitArray, int>();
+            var monsterBitArrayList = new List<BitArray>();
+            var monsterLines = BinarySeaMonsterPattern.Split(new[] { "\n", "\r\n" },
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            foreach (var line in monsterLines)
+            {
+                var boolList = line.Select(ch => ch == '1');
+
+                monsterBitArrayList.Add(new BitArray(boolList.ToArray()));
+                monsterBitArrayHits.Add(monsterBitArrayList.Last(), boolList.Count(b => b));
+            }
+
+            var seaMonsterX = monsterLines[0].Length;
+            var seaMonsterY = monsterLines.Count;
+
+            var totalSeaMonsters = 0;
+            foreach (var matrix in allPossibleMatrixes)
+            {
+                if (totalSeaMonsters > 0)   // Monsters can only be found in one of the possible matrixes
+                {
+                    break;
+                }
+
+                int maxY = matrix.Content.Count;
+                int maxX = matrix.Content[0].Count;
+
+                for (int y = 0; y < maxY - seaMonsterY; ++y)
+                {
+                    var lines = new List<string>(seaMonsterY);
+                    for (int localY = 0; localY < seaMonsterY; ++localY)
+                    {
+                        lines.Add(matrix.Content[y + localY].ToBitString());
+                    }
+
+                    for (int x = 0; x < maxX - seaMonsterX; ++x)
+                    {
+                        var seaRegions = new List<string>(seaMonsterY);
+                        for (int localY = 0; localY < seaMonsterY; ++localY)
+                        {
+                            seaRegions.Add(lines[localY].Substring(x, seaMonsterX));
+                        }
+
+                        var seaRegionsBitArrayList = seaRegions.ConvertAll(str => new BitArray(str.Select(c => c == '1').ToArray()));
+
+                        // And them, and the result should be equals to the line of the monster
+                        var monsters =
+                            seaRegionsBitArrayList
+                                .Zip(monsterBitArrayList)
+                                .All(pair =>
+                                {
+                                    var result = pair.First.And(pair.Second);
+
+                                    return result.ToBitString() == pair.Second.ToBitString();
+                                });
+
+                        if (monsters)
+                        {
+                            ++totalSeaMonsters;
+                        }
+                    }
+                }
+            }
+
+            if (totalSeaMonsters == 0)
+            {
+                throw new SolvingException();
+            }
+
+            return totalSeaMonsters;
         }
 
         private IEnumerable<Piece> ParseInput()
@@ -809,9 +791,12 @@ namespace AoC_2020
         }
     }
 
-    internal class Piece
+    internal class Piece : BitMatrix
     {
-        public BitMatrix Matrix { get; private set; } = null!;
+        /// <summary>
+        /// [Placed] Free directions of a piece that has already been placed
+        /// </summary>
+        private ICollection<Direction> _freeDirections = null!;
 
         private string _top = null!;
         private string _bottom = null!;
@@ -836,18 +821,13 @@ namespace AoC_2020
         public HashSet<string> PossibleSides { get; private set; } = null!;
 
         /// <summary>
-        /// [Placed] Free directions of a piece that has already been placed
-        /// </summary>
-        public ICollection<Direction> FreeDirections { get; set; } = null!;
-
-        /// <summary>
-        /// [Placed] Free sides of a piece that has already been placed, each one corresponding to one <see cref="FreeDirections"/>
+        /// [Placed] Free sides of a piece that has already been placed, each one corresponding to one <see cref="_freeDirections"/>
         /// </summary>
         public IEnumerable<(Direction direction, string side)> FreeSides
         {
             get
             {
-                foreach (var dir in FreeDirections)
+                foreach (var dir in _freeDirections)
                 {
                     yield return (
                         dir,
@@ -863,38 +843,14 @@ namespace AoC_2020
             }
         }
 
-        public List<BitArray> Content => Matrix.Content;
-
-        public Piece(int id, List<BitArray> content)
+        public Piece(int id, List<BitArray> content) : base(content)
         {
             Id = id;
-            SetBitMatrix(content);
+            UpdateSideProperties();
         }
 
-        private void SetBitMatrix(List<BitArray> content)
+        protected Piece(int id, BitMatrix bitMatrix) : this(id, bitMatrix.Content)
         {
-            Matrix = new BitMatrix(content);
-
-            _top = Matrix.Content[0].ToBitString();
-            _topReversed = ReverseString(_top);
-
-            _bottom = Matrix.Content.Last().ToBitString();
-            _bottomReversed = ReverseString(_bottom);
-
-            _left = new BitArray(Matrix.Content.Select(arr => arr[0]).ToArray()).ToBitString();
-            _leftReversed = ReverseString(_left);
-
-            _right = new BitArray(Matrix.Content.Select(arr => arr[^1]).ToArray()).ToBitString();
-            _rightReversed = ReverseString(_right);
-
-            PossibleSides = new HashSet<string> {
-                    _top, _topReversed,
-                    _bottom, _bottomReversed,
-                    _left, _leftReversed,
-                    _right, _rightReversed,
-                };
-
-            FreeDirections = new List<Direction> { Direction.Up, Direction.Down, Direction.Right, Direction.Left };
         }
 
         /// <summary>
@@ -928,7 +884,7 @@ namespace AoC_2020
         }
 
         /// <summary>
-        /// [Non placed] Actual pieces outcome of rotating/flipping this one that have <paramref name="side"/>
+        /// [Non placed] Actual Piece outcome of rotating/flipping this one that have <paramref name="side"/> in <paramref name="direction"/>.
         /// </summary>
         /// <param name="side"></param>
         /// <returns></returns>
@@ -942,7 +898,7 @@ namespace AoC_2020
                 }
                 else if (side == _topReversed)
                 {
-                    return this.FlipLeftRight();
+                    return FlipLeftRight();
                 }
                 //
                 else if (side == _bottom)
@@ -990,7 +946,7 @@ namespace AoC_2020
                 }
                 else if (side == _bottomReversed)
                 {
-                    return this.FlipLeftRight();
+                    return FlipLeftRight();
                 }
                 //
                 else if (side == _left)
@@ -1047,7 +1003,7 @@ namespace AoC_2020
                 }
                 else if (side == _rightReversed)
                 {
-                    return this.FlipUpsideDown();
+                    return FlipUpsideDown();
                 }
             }
 
@@ -1077,7 +1033,7 @@ namespace AoC_2020
                 }
                 else if (side == _leftReversed)
                 {
-                    return this.FlipUpsideDown();
+                    return FlipUpsideDown();
                 }
                 //
                 else if (side == _right)
@@ -1093,37 +1049,38 @@ namespace AoC_2020
             throw new SolvingException($"Id {Id} => MutateToHave(Side {side}, Direction {direction})");
         }
 
-        public Piece RotateClockwise() => new Piece(Id, Matrix.RotateClockwise());
+        public override Piece RotateClockwise() => new Piece(Id, base.RotateClockwise());
 
-        public Piece RotateAnticlockwise() => new Piece(Id, Matrix.RotateAnticlockwise());
+        public override Piece RotateAnticlockwise() => new Piece(Id, base.RotateAnticlockwise());
 
-        public Piece Rotate180() => new Piece(Id, Matrix.Rotate180());
+        public override Piece Rotate180() => new Piece(Id, base.Rotate180());
 
-        public Piece FlipUpsideDown() => new Piece(Id, Matrix.FlipUpsideDown());
+        public override Piece FlipUpsideDown() => new Piece(Id, base.FlipUpsideDown());
 
-        public Piece FlipLeftRight() => new Piece(Id, Matrix.FlipLeftRight());
+        public override Piece FlipLeftRight() => new Piece(Id, base.FlipLeftRight());
 
-        public override string ToString()
+        private void UpdateSideProperties()
         {
-            return Matrix.ToString();
-        }
+            _top = Content[0].ToBitString();
+            _topReversed = _top.ReverseString();
 
-        internal static string ReverseString(string str)
-        {
-            char[] charArray = str.ToCharArray();
-            Array.Reverse(charArray);
-            return new string(charArray);
-        }
-    }
+            _bottom = Content.Last().ToBitString();
+            _bottomReversed = _bottom.ReverseString();
 
-    public static class StringHelpers
-    {
-        public static string ReverseString(string str)
-        {
-            char[] charArray = str.ToCharArray();
-            Array.Reverse(charArray);
+            _left = new BitArray(Content.Select(arr => arr[0]).ToArray()).ToBitString();
+            _leftReversed = _left.ReverseString();
 
-            return new string(charArray);
+            _right = new BitArray(Content.Select(arr => arr[^1]).ToArray()).ToBitString();
+            _rightReversed = _right.ReverseString();
+
+            PossibleSides = new HashSet<string> {
+                    _top, _topReversed,
+                    _bottom, _bottomReversed,
+                    _left, _leftReversed,
+                    _right, _rightReversed,
+                };
+
+            _freeDirections = new List<Direction> { Direction.Up, Direction.Down, Direction.Right, Direction.Left };
         }
     }
 }
