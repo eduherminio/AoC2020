@@ -130,6 +130,7 @@ namespace AoC_2020
 
         public HexagonalPoint2D Move(HexDirection dir)
         {
+#pragma warning disable S1121 // Assignments should not be made from within sub-expressions
             return dir switch
             {
                 HexDirection.w => this with { X = this.X - 1 },
@@ -140,6 +141,7 @@ namespace AoC_2020
                 HexDirection.sw => this with { X = this.X - 1, Y = this.Y - 1 },
                 _ => throw new SolvingException()
             };
+#pragma warning restore S1121 // Assignments should not be made from within sub-expressions
         }
     }
 }

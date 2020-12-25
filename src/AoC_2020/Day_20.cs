@@ -113,7 +113,7 @@ namespace AoC_2020
                 }
 
                 monsterBitArrayList.Add(new BitArray(boolList.ToArray()));
-                monsterBitArrayHits.Add(monsterBitArrayList.Last(), boolList.Count(b => b == true));
+                monsterBitArrayHits.Add(monsterBitArrayList.Last(), boolList.Count(b => b));
                 boolList.Clear();
             }
 
@@ -138,9 +138,6 @@ namespace AoC_2020
                     {
                         lines.Add(matrix.Content[y + localY].ToBitString());
                     }
-                    //var matrix1 = matrix.Content[y + 0].ToBitString().AsSpan();
-                    //var matrix2 = matrix.Content[y + 1].ToBitString().AsSpan();
-                    //var matrix3 = matrix.Content[y + 2].ToBitString().AsSpan();
 
                     for (int x = 0; x < maxX - seaMonsterX; ++x)
                     {
@@ -167,16 +164,8 @@ namespace AoC_2020
                         {
                             ++totalSeaMonsters;
                         }
-                        // seaRegions | bitmonster
-                        //var sea1 = matrix1(x + 0, seaMonsterX);
-                        //var firstLine = new BitArray()
-
-
-
-                        //var contentToSearch =
                     }
                 }
-
             }
 
             if (totalSeaMonsters == 0)
@@ -314,7 +303,7 @@ namespace AoC_2020
         {
             if (contour.Count == 1)
             {
-                return new[] { contour.First().First() }.ToList();
+                return new[] { contour[0][0] }.ToList();
             }
 
             List<List<(Piece Piece, IntPoint Position)>> orderedSides = new List<List<(Piece Piece, IntPoint Position)>>();
@@ -461,10 +450,10 @@ namespace AoC_2020
                         bool outsideOfSquare =
                             Math.Abs(maxX - minX) >= sideLength
                             || Math.Abs(maxY - minY) >= sideLength
-                            || (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
-                                    && (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
-                            || (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength)
-                                && (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength)
+                            || (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength
+                                    && (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength))
+                            || (Math.Abs(currentPosition.X) != 0 && Math.Abs(currentPosition.X) != sideLength
+                                && (Math.Abs(currentPosition.Y) != 0 && Math.Abs(currentPosition.Y) != sideLength))
                             || (maxX > 0 && minX < 0)
                             || (minX < 0 && maxX > 0)
                             || (maxY > 0 && minY < 0)
@@ -494,7 +483,7 @@ namespace AoC_2020
                 }
             }
 
-            var stringIds = possibleSides.Select((side, index) => (
+            var stringIds = possibleSides.Select((side, _) => (
                     side,
                     string.Join('|', side.Select(pair => pair.Piece.Id))))
                 .ToList();
@@ -567,10 +556,7 @@ namespace AoC_2020
             // Place pieces in the right place, without worrying about its orientation
             List<(Piece Piece, IntPoint Position)> puzzle = ComposePuzzleWithUnrotatedPieces(orderedContoursList, pieceNeighbours);
 
-            // Rotate them
-            puzzle = RotatePuzzlePiecesToCompletePuzzle(puzzle);
-
-            return puzzle;
+            return RotatePuzzlePiecesToCompletePuzzle(puzzle);
 
             static List<(Piece Piece, IntPoint Position)> ComposePuzzleWithUnrotatedPieces(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
             {
@@ -746,7 +732,7 @@ namespace AoC_2020
             }
         }
 
-        private BitMatrix RemoveBordersAndJoin(List<(Piece Piece, IntPoint Position)> puzzle)
+        private static BitMatrix RemoveBordersAndJoin(List<(Piece Piece, IntPoint Position)> puzzle)
         {
             var sideLength = Convert.ToInt32(Math.Sqrt(puzzle.Count));
             var pieceSideLength = puzzle[0].Piece.Left.Length;
@@ -767,7 +753,7 @@ namespace AoC_2020
                 var rows = piece.Matrix.Content;
 
                 // Comment to not remove anything
-                rows.Remove(rows.First());
+                rows.Remove(rows[0]);
                 rows.Remove(rows.Last());
 
                 if (position.Y != prev.Y)
@@ -926,7 +912,7 @@ namespace AoC_2020
             if (side == _bottom)
             {
                 return Direction.Down;
-            };
+            }
 
             if (side == Left)
             {
