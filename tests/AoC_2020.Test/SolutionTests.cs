@@ -28,7 +28,7 @@ namespace AoC_2020.Test
             [InlineData(typeof(Day_17), "263", "1680")]
             [InlineData(typeof(Day_18), "280014646144", "9966990988262")]
             [InlineData(typeof(Day_19), "104", "314")]
-            //[InlineData(typeof(Day_20), "", "")]
+            [InlineData(typeof(Day_20), "15006909892229", "2190")]
             [InlineData(typeof(Day_21), "2428", "bjq,jznhvh,klplr,dtvhzt,sbzd,tlgjzx,ctmbr,kqms")]
             [InlineData(typeof(Day_22), "31957", "33212")]
             [InlineData(typeof(Day_23), "47382659", "42271866720")]
