@@ -18,7 +18,7 @@ namespace AoC_2020
 
         public override string Solve_1() => Part1_LinkedList();
 
-        public override string Solve_2() => Part2_LinkedList();
+        public override string Solve_2() => Part2_LinkedList_And_Array();
 
         private string Part1_List()
         {
@@ -38,7 +38,7 @@ namespace AoC_2020
 
         private string Part1_LinkedList()
         {
-            var result = PlayCrubCups_LinkedList_Enhanced(ParseInput(), 100).ToList();
+            var result = PlayCrubCups_LinkedList_And_Dictionary(ParseInput(), 100).ToList();
 
             var firstIndex = result.IndexOf(1);
 
@@ -67,14 +67,32 @@ namespace AoC_2020
                 .ToString();
         }
 
-        private string Part2_LinkedList()
+        private string Part2_LinkedList_And_Array()
         {
             for (int i = _input.Max() + 1; i <= 1_000_000; ++i)
             {
                 _input.AddLast(i);
             }
 
-            var result = PlayCrubCups_LinkedList_Enhanced(_input, 10_000_000);
+            var result = PlayCrubCups_LinkedList_And_Array(_input, 10_000_000);
+
+            var firstNode = result.Find(1)!;
+
+            var next = firstNode.Next ?? result.First!;
+            var nextNext = next.Next ?? result.First!;
+
+            return ((long)next.Value * nextNext.Value)
+                .ToString();
+        }
+
+        private string Part2_LinkedList_And_Dictionary()
+        {
+            for (int i = _input.Max() + 1; i <= 1_000_000; ++i)
+            {
+                _input.AddLast(i);
+            }
+
+            var result = PlayCrubCups_LinkedList_And_Dictionary(_input, 10_000_000);
 
             var firstNode = result.Find(1)!;
 
@@ -86,14 +104,72 @@ namespace AoC_2020
         }
 
         /// <summary>
+        /// Similar to <see cref="PlayCrubCups_LinkedList"/>, but saving each node in an array
+        /// to avoid using <see cref="LinkedList{T}.Find(T)"/>. More efficient than <see cref="PlayCrubCups_LinkedList_And_Dictionary"/>
+        /// </summary>
+        /// <param name="initialLabelling"></param>
+        /// <param name="turns"></param>
+        /// <returns></returns>
+        private static LinkedList<int> PlayCrubCups_LinkedList_And_Array(LinkedList<int> initialLabelling, int turns)
+        {
+            const int numberOfCupsToRemove = 3;
+            var cups = initialLabelling;
+            LinkedListNode<int> NextNode(LinkedListNode<int> node) => node.Next ?? cups.First!;
+
+            var nodeArray = new LinkedListNode<int>[turns + 1];
+            var currentNode = cups.First!;
+            for (int i = 0; i < cups.Count; ++i)
+            {
+                nodeArray[currentNode!.Value] = currentNode;
+                currentNode = currentNode.Next;
+            }
+
+            var minLabel = cups.Min();
+            var maxLabel = cups.Max();
+
+            var current = cups.Last!;
+
+            for (int turn = 1; turn <= turns; ++turn)
+            {
+                current = NextNode(current);
+
+                var cupsToRemove = new List<LinkedListNode<int>>(numberOfCupsToRemove) { NextNode(current) };
+                for (int i = 1; i <= numberOfCupsToRemove - 1; ++i)
+                {
+                    cupsToRemove.Add(NextNode(cupsToRemove.Last()));
+                }
+
+                cupsToRemove.ForEach(c => cups.Remove(c));
+
+                var destinationCupLabel = (current.Value - 1) >= minLabel ? (current.Value - 1) : maxLabel;
+                while (cupsToRemove.Select(n => n.Value).Contains(destinationCupLabel))
+                {
+                    if (--destinationCupLabel < minLabel)
+                    {
+                        destinationCupLabel = maxLabel;
+                    }
+                }
+
+                var destinationCup = nodeArray[destinationCupLabel];
+
+                for (int i = 0; i < cupsToRemove.Count; ++i)
+                {
+                    cups.AddAfter(destinationCup, cupsToRemove[i]);
+                    destinationCup = cupsToRemove[i];
+                }
+            }
+
+            return cups;
+        }
+
+        /// <summary>
         /// Similar to <see cref="PlayCrubCups_LinkedList(LinkedList{int}, int, int)"/>, but saving each node in a dictionary
         /// to avoid using <see cref="LinkedList{T}.Find(T)"/>
         /// </summary>
         /// <param name="initialLabelling"></param>
-        /// <param name="numberOfCupsToRemove"></param>
         /// <param name="turns"></param>
         /// <returns></returns>
-        private static LinkedList<int> PlayCrubCups_LinkedList_Enhanced(LinkedList<int> initialLabelling, int turns)
+        private static LinkedList<int> PlayCrubCups_LinkedList_And_Dictionary(LinkedList<int> initialLabelling, int turns)
         {
             const int numberOfCupsToRemove = 3;
             var cups = initialLabelling;
