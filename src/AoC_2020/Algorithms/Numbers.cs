@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using FastHashSet;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AoC_2020.Algorithms
@@ -7,7 +8,7 @@ namespace AoC_2020.Algorithms
     {
         public static IEnumerable<long> PairOfNumbersThatSumN(this IEnumerable<long> candidates, long total)
         {
-            var savedNumberList = new HashSet<long>();
+            var savedNumberList = new FastHashSet<long>();
 
             foreach (var current in candidates)
             {

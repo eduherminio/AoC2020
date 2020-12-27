@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            var ingredients = new HashSet<string>(_foods.SelectMany(food => food.Ingredients));
+            var ingredients = new FastHashSet<string>(_foods.SelectMany(food => food.Ingredients));
             var allergenIngredientList = SeparateAllergens(_foods);
 
             var safeIngredients = ingredients
@@ -39,17 +40,17 @@ namespace AoC_2020
                 allergenIngredientList.OrderBy(pair => pair.allergen).Select(pair => pair.ingredient));
         }
 
-        private static HashSet<(string allergen, string ingredient)> SeparateAllergens(List<Food> foods)
+        private static FastHashSet<(string allergen, string ingredient)> SeparateAllergens(List<Food> foods)
         {
-            var result = new HashSet<(string allergen, string ingredient)>();
+            var result = new FastHashSet<(string allergen, string ingredient)>();
 
-            var allergens = new HashSet<string>(foods.SelectMany(food => food.Allergens));
+            var allergens = new FastHashSet<string>(foods.SelectMany(food => food.Allergens));
 
-            var allergensCandidateIngredients = new Dictionary<string, HashSet<string>>(
-                allergens.Select(all => new KeyValuePair<string, HashSet<string>>(all, new HashSet<string>())));
+            var allergensCandidateIngredients = new Dictionary<string, FastHashSet<string>>(
+                allergens.Select(all => new KeyValuePair<string, FastHashSet<string>>(all, new FastHashSet<string>())));
 
-            var foodsByAllergen = new Dictionary<string, HashSet<Food>>(
-                allergens.Select(all => new KeyValuePair<string, HashSet<Food>>(all, new HashSet<Food>())));
+            var foodsByAllergen = new Dictionary<string, FastHashSet<Food>>(
+                allergens.Select(all => new KeyValuePair<string, FastHashSet<Food>>(all, new FastHashSet<Food>())));
 
             // Populate allergensCandidateIngredients and foodsByAllergen
             foreach (var food in foods)
@@ -108,14 +109,14 @@ namespace AoC_2020
 
         private class Food
         {
-            public HashSet<string> Ingredients { get; init; }
+            public FastHashSet<string> Ingredients { get; init; }
 
-            public HashSet<string> Allergens { get; init; }
+            public FastHashSet<string> Allergens { get; init; }
 
             public Food(IEnumerable<string> ingredientes, IEnumerable<string> allergens)
             {
-                Ingredients = new HashSet<string>(ingredientes);
-                Allergens = new HashSet<string>(allergens);
+                Ingredients = new FastHashSet<string>(ingredientes);
+                Allergens = new FastHashSet<string>(allergens);
             }
         }
     }

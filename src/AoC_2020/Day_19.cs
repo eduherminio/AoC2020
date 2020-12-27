@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using FileParser;
 using System;
 using System.Collections.Concurrent;
@@ -126,7 +127,7 @@ namespace AoC_2020
             var rule42 = replacedRules[42];
             var rule31 = replacedRules[31];
 
-            var patterns = new HashSet<string>();
+            var patterns = new FastHashSet<string>();
 
             for (int i42 = 2; i42 <= 6; ++i42)
             {
@@ -284,7 +285,7 @@ namespace AoC_2020
 
             public bool IsLiteral { get; set; }
 
-            public HashSet<int> RelatedRules { get; }
+            public FastHashSet<int> RelatedRules { get; }
 
             public StringBuilder RegexExpression { get; set; }
 
@@ -296,8 +297,8 @@ namespace AoC_2020
                 RegexExpression = new StringBuilder();
 
                 RelatedRules = IsLiteral
-                    ? new HashSet<int>(0)
-                    : new HashSet<int>(Content
+                    ? new FastHashSet<int>(0)
+                    : new FastHashSet<int>(Content
                             .Split(' ', StringSplitOptions.TrimEntries)
                             .Where(str => str != "|")
                             .Select(int.Parse));

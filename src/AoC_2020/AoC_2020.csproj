@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AoCHelper" Version="0.15.0" />
+    <PackageReference Include="FastHashSet" Version="0.1.0-alpha.2" />
     <PackageReference Include="FileParser" Version="2.1.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />

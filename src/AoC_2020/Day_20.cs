@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using FileParser;
 using SheepTools;
 using SheepTools.Extensions;
@@ -30,14 +31,14 @@ namespace AoC_2020
         {
             var pieceWithCandidateNeighbours = _pieces.Select(piece =>
                  {
-                     var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
+                     var candidateNeighbours = new Dictionary<Piece, FastHashSet<string>>();
 
                      foreach (var otherPiece in _pieces.Except(new[] { piece }))
                      {
                          var sharedSides = piece.PossibleSides.Intersect(otherPiece.PossibleSides);
                          if (sharedSides.Any())
                          {
-                             candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                             candidateNeighbours.Add(otherPiece, sharedSides.ToFastHashSet());
                          }
                      }
                      return (piece, candidateNeighbours);
@@ -92,18 +93,18 @@ namespace AoC_2020
         /// Returns a dictionary with each Piece Id as key and a dictionary of possible neighbours Pieces and their possible shared sides as value
         /// </summary>
         /// <returns></returns>
-        private Dictionary<int, Dictionary<Piece, HashSet<string>>> ExtractPieceNeighboursDictionary()
+        private Dictionary<int, Dictionary<Piece, FastHashSet<string>>> ExtractPieceNeighboursDictionary()
         {
             return _pieces.ToDictionary(piece => piece.Id, piece =>
             {
-                var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
+                var candidateNeighbours = new Dictionary<Piece, FastHashSet<string>>();
 
                 foreach (var otherPiece in _pieces.Except(new[] { piece }))
                 {
                     var sharedSides = piece.PossibleSides.Intersect(otherPiece.PossibleSides);
                     if (sharedSides.Any())
                     {
-                        candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                        candidateNeighbours.Add(otherPiece, sharedSides.ToFastHashSet());
                     }
                 }
                 return candidateNeighbours;
@@ -117,10 +118,10 @@ namespace AoC_2020
         /// <param name="sideLength"></param>
         /// <param name="pieceNeighbours"></param>
         /// <returns></returns>
-        private List<List<List<(Piece Piece, IntPoint Position)>>> ExtractContours(int sideLength, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
+        private List<List<List<(Piece Piece, IntPoint Position)>>> ExtractContours(int sideLength, Dictionary<int, Dictionary<Piece, FastHashSet<string>>> pieceNeighbours)
         {
             List<List<List<(Piece Piece, IntPoint Position)>>>? countourList = new();
-            List<KeyValuePair<int, Dictionary<Piece, HashSet<string>>>>? totalSides = new();
+            List<KeyValuePair<int, Dictionary<Piece, FastHashSet<string>>>>? totalSides = new();
 
             var contourCount = 0;
             while (true)
@@ -149,14 +150,14 @@ namespace AoC_2020
                     .Where(p => sideKeys.Contains(p.Id))
                     .ToDictionary(piece => piece.Id, piece =>
                     {
-                        var candidateNeighbours = new Dictionary<Piece, HashSet<string>>();
+                        var candidateNeighbours = new Dictionary<Piece, FastHashSet<string>>();
 
                         foreach (var otherPiece in _pieces.Where(p => sideKeys.Contains(p.Id)).Except(new[] { piece }))
                         {
                             var sharedSides = piece.PossibleSides.Intersect(otherPiece.PossibleSides);
                             if (sharedSides.Any())
                             {
-                                candidateNeighbours.Add(otherPiece, sharedSides.ToHashSet());
+                                candidateNeighbours.Add(otherPiece, sharedSides.ToFastHashSet());
                             }
                         }
                         return candidateNeighbours;
@@ -298,8 +299,8 @@ namespace AoC_2020
         /// <param name="sideLength">Total puzzle sideLength</param>
         /// <returns></returns>
         internal static List<List<(Piece Piece, IntPoint Position)>> GetSides(
-            Dictionary<int, Dictionary<Piece, HashSet<string>>> allPiecesWithNeighbours,
-            Dictionary<int, Dictionary<Piece, HashSet<string>>> sidePiecesWithNeighbours,
+            Dictionary<int, Dictionary<Piece, FastHashSet<string>>> allPiecesWithNeighbours,
+            Dictionary<int, Dictionary<Piece, FastHashSet<string>>> sidePiecesWithNeighbours,
             List<Piece> allSidePieces, int sideLength)
         {
             var corners = allPiecesWithNeighbours.Where(node => node.Value.Count == 2).ToList();
@@ -405,7 +406,7 @@ namespace AoC_2020
                     string.Join('|', side.Select(pair => pair.Piece.Id))))
                 .ToList();
 
-            var distinct = new HashSet<string>();
+            var distinct = new FastHashSet<string>();
             var distinctItems = new List<List<(Piece Piece, IntPoint Position)>>();
             foreach (var pair in stringIds)
             {
@@ -433,7 +434,7 @@ namespace AoC_2020
         /// <param name="solution"></param>
         /// <returns></returns>
         private static IEnumerable<(Piece Piece, int ParentIndex, Direction ParentDirection)> GetCandidates(Piece piece, int index,
-            Dictionary<int, Dictionary<Piece, HashSet<string>>> nodes,
+            Dictionary<int, Dictionary<Piece, FastHashSet<string>>> nodes,
             List<(Piece Node, IntPoint Position)> solution)
         {
             var freeSides = piece.FreeSides.ToList();
@@ -475,7 +476,7 @@ namespace AoC_2020
 
             return RotatePuzzlePiecesToCompletePuzzle(puzzle);
 
-            static List<(Piece Piece, IntPoint Position)> ComposePuzzleWithUnrotatedPieces(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList, Dictionary<int, Dictionary<Piece, HashSet<string>>> pieceNeighbours)
+            static List<(Piece Piece, IntPoint Position)> ComposePuzzleWithUnrotatedPieces(List<List<(Piece Piece, IntPoint Position)>> orderedContoursList, Dictionary<int, Dictionary<Piece, FastHashSet<string>>> pieceNeighbours)
             {
                 var puzzle = new List<(Piece Piece, IntPoint Position)>();
 
@@ -818,7 +819,7 @@ namespace AoC_2020
         /// <summary>
         /// [Non placed] Sides as outcome of rotating and/or flipping the piece
         /// </summary>
-        public HashSet<string> PossibleSides { get; private set; } = null!;
+        public FastHashSet<string> PossibleSides { get; private set; } = null!;
 
         /// <summary>
         /// [Placed] Free sides of a piece that has already been placed, each one corresponding to one <see cref="_freeDirections"/>
@@ -1073,7 +1074,7 @@ namespace AoC_2020
             _right = new BitArray(Content.Select(arr => arr[^1]).ToArray()).ToBitString();
             _rightReversed = _right.ReverseString();
 
-            PossibleSides = new HashSet<string> {
+            PossibleSides = new FastHashSet<string> {
                     _top, _topReversed,
                     _bottom, _bottomReversed,
                     _left, _leftReversed,

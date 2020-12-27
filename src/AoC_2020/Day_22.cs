@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using FileParser;
 using Nito.Collections;
 using System;
@@ -48,7 +49,7 @@ namespace AoC_2020
         /// <returns>A boolean that is true if Player 1 is the winner, and the winner deck</returns>
         private static (bool isPlayer1Winner, Deque<int> winnerDeck) PlayCombatGame(IEnumerable<int> player1InitialDeck, IEnumerable<int> player2InitialDeck, bool isRecursive)
         {
-            var previousDecks = new HashSet<(string, string)>();
+            var previousDecks = new FastHashSet<(string, string)>();
 
             var player1Deck = new Deque<int>(player1InitialDeck);
             var player2Deck = new Deque<int>(player2InitialDeck);

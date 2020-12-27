@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -109,14 +110,14 @@ namespace AoC_2020
         public class SeatingSystem
         {
             private readonly bool _isPart2;
-            private readonly HashSet<SeatingLocation> _seatingLocations;
+            private readonly FastHashSet<SeatingLocation> _seatingLocations;
 
             public int OccupiedSeats => _seatingLocations.Count(l => l.Status == SeatingStatus.Occupied);
 
             public SeatingSystem(List<SeatingLocation> seatingLocations, bool isPart2)
             {
                 _isPart2 = isPart2;
-                _seatingLocations = seatingLocations.Where(location => location.Status != SeatingStatus.Floor).ToHashSet();
+                _seatingLocations = seatingLocations.Where(location => location.Status != SeatingStatus.Floor).ToFastHashSet();
 
                 if (_isPart2)
                 {
@@ -198,14 +199,14 @@ namespace AoC_2020
                 _next = null;
             }
 
-            public void SetAdjacentSeats_Part2(HashSet<SeatingLocation> otherSeats)
+            public void SetAdjacentSeats_Part2(FastHashSet<SeatingLocation> otherSeats)
             {
                 AdjacentSeats.Clear();
 
                 AddHorizontalAndVerticalAdjacents(otherSeats);
                 AddDiagonalAdjacents(otherSeats);
 
-                void AddHorizontalAndVerticalAdjacents(HashSet<SeatingLocation> otherSeats)
+                void AddHorizontalAndVerticalAdjacents(FastHashSet<SeatingLocation> otherSeats)
                 {
                     SeatingLocation? left = null;
                     SeatingLocation? right = null;
@@ -260,7 +261,7 @@ namespace AoC_2020
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
                 }
 
-                void AddDiagonalAdjacents(HashSet<SeatingLocation> otherSeats)
+                void AddDiagonalAdjacents(FastHashSet<SeatingLocation> otherSeats)
                 {
                     SeatingLocation? topLeft = null;
                     SeatingLocation? topRight = null;

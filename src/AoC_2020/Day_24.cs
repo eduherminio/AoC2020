@@ -2,6 +2,7 @@
 
 using AoC_2020.GameOfLife;
 using AoCHelper;
+using FastHashSet;
 using SheepTools;
 using System;
 using System.Collections.Generic;
@@ -28,9 +29,9 @@ namespace AoC_2020
 
         public override string Solve_2()
         {
-            var blackTiles = GetInitialBlackTiles().ToHashSet();
+            var blackTiles = GetInitialBlackTiles();
 
-            HashSet<Point> state = blackTiles.ToHashSet();
+            FastHashSet<Point> state = blackTiles.ToFastHashSet();
 
             var game = new GameOfLife.GameOfLife(
                 state,

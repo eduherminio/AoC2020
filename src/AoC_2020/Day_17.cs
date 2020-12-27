@@ -1,5 +1,6 @@
 ﻿using AoC_2020.GameOfLife;
 using AoCHelper;
+using FastHashSet;
 using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace AoC_2020
 
         public override string Solve_1()
         {
-            HashSet<Point> state = new(_input.Select(p => new Point3D(p.X, p.Y, 0)));
+            FastHashSet<Point> state = new(_input.Select(p => new Point3D(p.X, p.Y, 0)));
 
             var game = new GameOfLife.GameOfLife(state);
 
@@ -41,7 +42,7 @@ namespace AoC_2020
         /// <returns></returns>
         public string Part2_GameOfLife()
         {
-            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+            FastHashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
 
             var game = new GameOfLife.GameOfLife(state);
 
@@ -59,7 +60,7 @@ namespace AoC_2020
         /// <returns></returns>
         public string Part2_GameOfLife_CachingNeighbours()
         {
-            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+            FastHashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
 
             var game = new GameOfLife.GameOfLife(state);
 
@@ -89,10 +90,10 @@ namespace AoC_2020
 
             static void Mutate_Dictionary(Dictionary<Point, bool> state)
             {
-                var pointsToActivate = new HashSet<Point>();
-                var pointsToDeactivate = new HashSet<Point>();
+                var pointsToActivate = new FastHashSet<Point>();
+                var pointsToDeactivate = new FastHashSet<Point>();
 
-                var visitedPoints = new HashSet<Point>();
+                var visitedPoints = new FastHashSet<Point>();
                 foreach (var pair in state)
                 {
                     if (visitedPoints.Contains(pair.Key))
@@ -165,7 +166,7 @@ namespace AoC_2020
         /// <returns></returns>
         public string Part2_Set()
         {
-            HashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
+            FastHashSet<Point> state = new(_input.Select(p => new Point4D(p.X, p.Y, 0, 0)));
 
             for (int cycle = 1; cycle <= 6; ++cycle)
             {
@@ -174,12 +175,12 @@ namespace AoC_2020
 
             return state.Count.ToString();
 
-            static void Mutate_Set(HashSet<Point> state)
+            static void Mutate_Set(FastHashSet<Point> state)
             {
-                var pointsToActivate = new HashSet<Point>();
-                var pointsToDeactivate = new HashSet<Point>();
+                var pointsToActivate = new FastHashSet<Point>();
+                var pointsToDeactivate = new FastHashSet<Point>();
 
-                var visitedPoints = new HashSet<Point>();
+                var visitedPoints = new FastHashSet<Point>();
                 foreach (var point in state)
                 {
                     if (visitedPoints.Contains(point))
@@ -238,14 +239,14 @@ namespace AoC_2020
             }
         }
 
-        private static void Print(HashSet<Point> state)
+        private static void Print(FastHashSet<Point> state)
         {
             if (state.First() is not Point3D)
             {
                 return;
             }
 
-            var state3D = new HashSet<Point3D>(state.Select(point => point as Point3D)!);
+            var state3D = new FastHashSet<Point3D>(state.Select(point => point as Point3D)!);
 
             var minX = state3D.Min(point => point.X);
             var maxX = state3D.Max(point => point.X);

@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using FileParser;
 using SheepTools.Extensions;
 using System;
@@ -89,7 +90,7 @@ namespace AoC_2020
 
             static ICollection<long> DecodeAddress(string address)
             {
-                var possibleAddressList = new HashSet<StringBuilder>();
+                var possibleAddressList = new FastHashSet<StringBuilder>();
 
                 possibleAddressList.AddRange(address[0] == 'X'
                     ? new[] { new StringBuilder("0"), new StringBuilder("1") }

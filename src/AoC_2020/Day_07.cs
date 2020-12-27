@@ -1,4 +1,5 @@
 ﻿using AoCHelper;
+using FastHashSet;
 using SheepTools.Extensions;
 using SheepTools.Model;
 using System.Collections.Generic;
@@ -22,9 +23,9 @@ namespace AoC_2020
         {
             return BagsThatCanContainABag(MyBagName).Count.ToString();
 
-            HashSet<Bag> BagsThatCanContainABag(string bagId, HashSet<Bag>? result = null)
+            FastHashSet<Bag> BagsThatCanContainABag(string bagId, FastHashSet<Bag>? result = null)
             {
-                result ??= new HashSet<Bag>();
+                result ??= new FastHashSet<Bag>();
 
                 foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Key.Id == bagId)))
                 {

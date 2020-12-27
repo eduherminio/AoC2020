@@ -1,4 +1,5 @@
-﻿using SheepTools.Extensions;
+﻿using FastHashSet;
+using SheepTools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,13 +25,13 @@ namespace AoC_2020.GameOfLife
 
         public int Iterations { get; private set; }
 
-        public HashSet<Point> AliveCells { get; }
+        public FastHashSet<Point> AliveCells { get; }
 
         /// <summary>
         /// Default Game of Life rules.
         /// </summary>
         /// <param name="initialCells"></param>
-        public GameOfLife(HashSet<Point> initialCells)
+        public GameOfLife(FastHashSet<Point> initialCells)
             : this(initialCells, DefaultToDieCondition, DefaultToBornCondition, DefaultNumberOfCellsWhichHaveAGivenCellAsNeighbourCondition)
         {
         }
@@ -46,7 +47,7 @@ namespace AoC_2020.GameOfLife
         /// Based on the total number of alive cells that has a given neighbour as neighbour.
         /// i.e., if it's an isolated neighbour (only one of the alive cells has it a neighbour), we probably don't even want to consider it.
         /// </param>
-        public GameOfLife(HashSet<Point> initialCells, Func<int, bool> toDieCondition, Func<int, bool> toBornCondition, Func<int, bool> numberOfCellsWhichHaveAGivenNeighbourAsNeighbourCondition)
+        public GameOfLife(FastHashSet<Point> initialCells, Func<int, bool> toDieCondition, Func<int, bool> toBornCondition, Func<int, bool> numberOfCellsWhichHaveAGivenNeighbourAsNeighbourCondition)
         {
             _toDieCondition = toDieCondition;
             _toBornCondition = toBornCondition;
@@ -61,8 +62,8 @@ namespace AoC_2020.GameOfLife
         {
             ++Iterations;
 
-            var cellsToBorn = new HashSet<Point>(AliveCells.Count);
-            var cellsToDie = new HashSet<Point>(AliveCells.Count);
+            var cellsToBorn = new FastHashSet<Point>(AliveCells.Count);
+            var cellsToDie = new FastHashSet<Point>(AliveCells.Count);
             var neighboursToNumberOfAliveCellsFromWhichItIsANeighbour = new Dictionary<Point, int>(10 * AliveCells.Count);
 
             foreach (var cell in AliveCells)
@@ -93,7 +94,7 @@ namespace AoC_2020.GameOfLife
             cellsToDie.ForEach(p => AliveCells.Remove(p));
 
             IEnumerable<(Point cell, bool isAlive)> LocalMutateCell(Point cell, bool isAlive,
-                HashSet<Point> aliveCells, HashSet<Point> cellsToBorn, HashSet<Point> cellsToDie)
+                FastHashSet<Point> aliveCells, FastHashSet<Point> cellsToBorn, FastHashSet<Point> cellsToDie)
             {
                 var neighboursWithStatus = cell.Neighbours()
                     .Select(p => (cell: p, aliveCells.Contains(p)));
@@ -111,8 +112,8 @@ namespace AoC_2020.GameOfLife
         {
             ++Iterations;
 
-            var cellsToBorn = new HashSet<Point>(AliveCells.Count);
-            var cellsToDie = new HashSet<Point>(AliveCells.Count);
+            var cellsToBorn = new FastHashSet<Point>(AliveCells.Count);
+            var cellsToDie = new FastHashSet<Point>(AliveCells.Count);
             var neighbours = new Dictionary<Point, int>(10 * AliveCells.Count);
 
             foreach (var cell in AliveCells)
@@ -158,7 +159,7 @@ namespace AoC_2020.GameOfLife
         }
 
         private void MutateCell(Point cell, bool isAlive, IEnumerable<(Point cell, bool isActive)> neighbours,
-            HashSet<Point> toBorn, HashSet<Point> toDie)
+            FastHashSet<Point> toBorn, FastHashSet<Point> toDie)
         {
             var activeNeighboursCount = neighbours.Count(pair => pair.isActive);
 
