@@ -2,7 +2,6 @@
 
 using AoC_2020.GameOfLife;
 using AoCHelper;
-using FastHashSet;
 using SheepTools;
 using System;
 using System.Collections.Generic;
@@ -31,7 +30,7 @@ namespace AoC_2020
         {
             var blackTiles = GetInitialBlackTiles();
 
-            FastHashSet<Point> state = blackTiles.ToFastHashSet();
+            HashSet<Point> state = blackTiles.ToHashSet();
 
             var game = new GameOfLife.GameOfLife(
                 state,

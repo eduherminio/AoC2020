@@ -30,7 +30,7 @@ namespace AoC_2020
                 foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Key.Id == bagId)))
                 {
                     result.Add(bag);
-                    result.AddRange(BagsThatCanContainABag(bag.Id, result));
+                    BagsThatCanContainABag(bag.Id, result);
                 }
 
                 return result;
