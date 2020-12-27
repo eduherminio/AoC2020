@@ -23,9 +23,9 @@ namespace AoC_2020
         {
             return BagsThatCanContainABag(MyBagName).Count.ToString();
 
-            FastHashSet<Bag> BagsThatCanContainABag(string bagId, FastHashSet<Bag>? result = null)
+            HashSet<Bag> BagsThatCanContainABag(string bagId, HashSet<Bag>? result = null)
             {
-                result ??= new FastHashSet<Bag>();
+                result ??= new HashSet<Bag>();
 
                 foreach (var bag in _input.Values.Where(node => node.Children.Any(ch => ch.Key.Id == bagId)))
                 {
