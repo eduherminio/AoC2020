@@ -1,9 +1,6 @@
 ﻿// https://eduherminio.github.io/blog/solving-aoc-2020-day-10/
 
 using AoCHelper;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -18,7 +15,7 @@ namespace AoC_2020
             _descendingInput = File.ReadAllLines(InputFilePath).Select(int.Parse).OrderByDescending(_ => _).ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var ones = 0;
             var threes = 0;
@@ -42,10 +39,10 @@ namespace AoC_2020
 
             ++threes;   // Last connection is highest adapter + 3 jolts
 
-            return $"{ones * threes}";
+            return new($"{ones * threes}");
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             _descendingInput.Add(0);
             // No need to add the max, since we know its the highest adapter +3
@@ -72,7 +69,7 @@ namespace AoC_2020
                     : totalNumberOfWays;
             }
 
-            return totalNumberOfWays.ToString();
+            return new(totalNumberOfWays.ToString());
         }
     }
 }

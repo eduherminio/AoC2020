@@ -1,7 +1,5 @@
 ﻿using AoCHelper;
 using FileParser;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -14,17 +12,17 @@ namespace AoC_2020
             _input = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return _input.Count(password =>
+            return new(_input.Count(password =>
             {
                 var charsCount = password.Content.Count(ch => ch == password.Policy);
 
                 return charsCount <= password.Rule.Last && charsCount >= password.Rule.First;
-            }).ToString();
+            }).ToString());
         }
 
-        public override string Solve_2() => Part2_xor();
+        public override ValueTask<string> Solve_2() => new(Part2_xor());
 
         internal string Part2_xor()
         {

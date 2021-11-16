@@ -1,8 +1,4 @@
 ﻿using AoCHelper;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -19,15 +15,15 @@ namespace AoC_2020
             _charListInput = ParseInputAsCharList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return TransverseMap(
+            return new(TransverseMap(
                 new[] { (x: 3, y: 1) },
                 ch => ch == '#')
-                .Single().ToString();
+                .Single().ToString());
         }
 
-        public override string Solve_2() => Part2_UnidimensionalStringList();
+        public override ValueTask<string> Solve_2() => new(Part2_UnidimensionalStringList());
 
         internal string Part2_UnidimensionalStringList()
         {

@@ -1,10 +1,6 @@
 ﻿using AoC_2020.GameOfLife;
 using AoCHelper;
 using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -17,7 +13,7 @@ namespace AoC_2020
             _input = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             HashSet<Point> state = new(_input.Select(p => new Point3D(p.X, p.Y, 0)));
 
@@ -30,10 +26,10 @@ namespace AoC_2020
                 //Print(game.AliveCells);
             }
 
-            return game.AliveCells.Count.ToString();
+            return new(game.AliveCells.Count.ToString());
         }
 
-        public override string Solve_2() => Part2_GameOfLife();
+        public override ValueTask<string> Solve_2() => new(Part2_GameOfLife());
 
         /// <summary>
         /// 50% faster than <see cref="Part2_Set"/>

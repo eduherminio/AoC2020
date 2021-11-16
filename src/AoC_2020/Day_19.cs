@@ -1,20 +1,15 @@
 ﻿using AoCHelper;
 using FileParser;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace AoC_2020
 {
     public class Day_19 : BaseDay
     {
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             (List<Rule> rules, List<string> messages) = ParseInput();
 
@@ -26,11 +21,11 @@ namespace AoC_2020
 
             var regex = new Regex(regexPattern, RegexOptions.Compiled);
 
-            return messages.Count(line => regex.IsMatch(line))
-                .ToString();
+            return new(messages.Count(line => regex.IsMatch(line))
+                .ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             (List<Rule> rules, List<string> messages) = ParseInput();
 
@@ -42,8 +37,8 @@ namespace AoC_2020
 
             var regexes = GenerateCombinations(rule8, rule11, rules);
 
-            return CountMatches_ParallelForEach_Interlock(messages, regexes)
-                .ToString();
+            return new(CountMatches_ParallelForEach_Interlock(messages, regexes)
+                .ToString());
         }
 
         private static Dictionary<int, Rule> ReplaceNestedRules(List<Rule> originalRules)

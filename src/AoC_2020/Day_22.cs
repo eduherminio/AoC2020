@@ -1,10 +1,7 @@
 ﻿using AoCHelper;
 using FileParser;
 using Nito.Collections;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -18,24 +15,24 @@ namespace AoC_2020
             (_player1Cards, _player2Cards) = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var winnerDeck = PlayCombatGame(_player1Cards, _player2Cards, isRecursive: false).winnerDeck;
 
             var counter = 1;
             return
-                winnerDeck.Reverse().Aggregate((long)0, (result, item) => result + (item * counter++))
-                .ToString();
+                new(winnerDeck.Reverse().Aggregate((long)0, (result, item) => result + (item * counter++))
+                .ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var winnerDeck = PlayCombatGame(_player1Cards, _player2Cards, isRecursive: true).winnerDeck;
 
             var counter = 1;
             return
-                winnerDeck.Reverse().Aggregate((long)0, (result, item) => result + (item * counter++))
-                .ToString();
+                new(winnerDeck.Reverse().Aggregate((long)0, (result, item) => result + (item * counter++))
+                .ToString());
         }
 
         private static string DeckHashCode(Deque<int> deck) => string.Join('|', deck);

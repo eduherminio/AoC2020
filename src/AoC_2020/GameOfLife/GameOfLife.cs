@@ -1,7 +1,4 @@
 ﻿using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AoC_2020.GameOfLife
 {

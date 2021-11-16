@@ -1,9 +1,5 @@
 ﻿using AoCHelper;
 using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -16,7 +12,7 @@ namespace AoC_2020
             _foods = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var ingredients = new HashSet<string>(_foods.SelectMany(food => food.Ingredients));
             var allergenIngredientList = SeparateAllergens(_foods);
@@ -25,18 +21,18 @@ namespace AoC_2020
                 .Except(allergenIngredientList.Select(pair => pair.ingredient))
                 .ToHashSet();
 
-            return safeIngredients
+            return new(safeIngredients
                 .Aggregate(0, (total, ingredient) =>
                     total + _foods.SelectMany(f => f.Ingredients).Count(ing => ing == ingredient))
-                .ToString();
+                .ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var allergenIngredientList = SeparateAllergens(_foods);
 
-            return string.Join(",",
-                allergenIngredientList.OrderBy(pair => pair.allergen).Select(pair => pair.ingredient));
+            return new(string.Join(",",
+                allergenIngredientList.OrderBy(pair => pair.allergen).Select(pair => pair.ingredient)));
         }
 
         private static HashSet<(string allergen, string ingredient)> SeparateAllergens(List<Food> foods)

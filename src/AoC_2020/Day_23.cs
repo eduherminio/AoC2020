@@ -1,8 +1,4 @@
 ﻿using AoCHelper;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace AoC_2020
@@ -16,9 +12,9 @@ namespace AoC_2020
             _input = ParseInput();
         }
 
-        public override string Solve_1() => Part1_LinkedList();
+        public override ValueTask<string> Solve_1() => new(Part1_LinkedList());
 
-        public override string Solve_2() => Part2_LinkedList_And_Array();
+        public override ValueTask<string> Solve_2() => new(Part2_LinkedList_And_Array());
 
         private string Part1_List()
         {

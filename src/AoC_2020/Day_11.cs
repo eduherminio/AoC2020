@@ -1,30 +1,26 @@
 ﻿using AoCHelper;
 using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
     public class Day_11 : BaseDay
     {
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var system = new SeatingSystem(ParseInput(isPart2: false).ToList(), isPart2: false);
 
             while (system.Mutate()) { /*_system.Print();*/ }
 
-            return system.OccupiedSeats.ToString();
+            return new(system.OccupiedSeats.ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var system = new SeatingSystem(ParseInput(isPart2: true).ToList(), isPart2: true);
 
             while (system.Mutate()) { /*_system.Print();*/ }
 
-            return system.OccupiedSeats.ToString();
+            return new(system.OccupiedSeats.ToString());
         }
 
         private IEnumerable<SeatingLocation> ParseInput(bool isPart2)

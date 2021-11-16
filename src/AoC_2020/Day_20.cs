@@ -3,11 +3,8 @@ using FileParser;
 using SheepTools;
 using SheepTools.Extensions;
 using SheepTools.Model;
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -26,7 +23,7 @@ namespace AoC_2020
             _pieces = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var pieceWithCandidateNeighbours = _pieces.Select(piece =>
                  {
@@ -47,11 +44,11 @@ namespace AoC_2020
 
             Debug.Assert(candidateCorners.Count() == 4);
 
-            return candidateCorners.Aggregate((long)1, (total, corner) => total * corner.piece.Id)
-                .ToString();
+            return new(candidateCorners.Aggregate((long)1, (total, corner) => total * corner.piece.Id)
+                .ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var pieceNeighbours = ExtractPieceNeighboursDictionary();
 
@@ -85,7 +82,7 @@ namespace AoC_2020
 
             var onesNotInMonsters = totalOnes - (onesInMonster * monsters);
 
-            return onesNotInMonsters.ToString();
+            return new(onesNotInMonsters.ToString());
         }
 
         /// <summary>

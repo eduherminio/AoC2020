@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace AoC_2020.AssemblyComputer
+﻿namespace AoC_2020.AssemblyComputer
 {
     public static class Computer
     {

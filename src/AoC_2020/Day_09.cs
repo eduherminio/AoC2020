@@ -1,8 +1,5 @@
 ﻿using AoC_2020.Algorithms;
 using AoCHelper;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -19,13 +16,13 @@ namespace AoC_2020
             _input = File.ReadAllLines(InputFilePath).Select(long.Parse).ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             _solutionPart1 = FirstWrongNumber(Preamble);
-            return _solutionPart1.ToString();
+            return new(_solutionPart1.ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             long sum = _solutionPart1 == default
                 ? FirstWrongNumber(Preamble)
@@ -33,7 +30,7 @@ namespace AoC_2020
 
             var set = _input.ContiguousNumbersThatSumN(sum);
 
-            return $"{set.Min() + set.Max()}";
+            return new($"{set.Min() + set.Max()}");
         }
 
         private long FirstWrongNumber(int preamble)

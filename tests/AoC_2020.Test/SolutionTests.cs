@@ -1,5 +1,6 @@
 using AoCHelper;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace AoC_2020.Test
@@ -34,12 +35,12 @@ namespace AoC_2020.Test
             [InlineData(typeof(Day_23), "47382659", "42271866720")]
             [InlineData(typeof(Day_24), "450", "4059")]
             [InlineData(typeof(Day_25), "3217885", "")]
-            public void Test(Type type, string sol1, string sol2)
+            public async Task Test(Type type, string sol1, string sol2)
             {
                 var instance = Activator.CreateInstance(type) as BaseDay;
 
-                Assert.Equal(sol1, instance.Solve_1());
-                Assert.Equal(sol2, instance.Solve_2());
+                Assert.Equal(sol1, await instance.Solve_1());
+                Assert.Equal(sol2, await instance.Solve_2());
             }
         }
     }

@@ -1,8 +1,6 @@
 ﻿using AoCHelper;
 using FileParser;
 using SheepTools.Extensions;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -17,9 +15,9 @@ namespace AoC_2020
             _inputForBinarySolution = _input.ConvertAll(group => group.ConvertAll(LineToBinary));
         }
 
-        public override string Solve_1() => Part1_Binary();
+        public override ValueTask<string> Solve_1() => new(Part1_Binary());
 
-        public override string Solve_2() => Part2_Binary();
+        public override ValueTask<string> Solve_2() => new(Part2_Binary());
 
         /// <summary>
         /// Original implementation

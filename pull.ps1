@@ -1,6 +1,7 @@
 # Install-Module -Name Microsoft.PowerShell.SecretsManagement -RequiredVersion 0.2.0-alpha1 -AllowPrerelease
+# Import-Module Microsoft.PowerShell.SecretsManagement
 
-Import-Module Microsoft.PowerShell.SecretsManagement
+# Add-Secret -Name AoCSessionId -Secret "..."
 
 if ($args.Count -eq 0) {
 	Write-Host "Please provide the day number"

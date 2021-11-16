@@ -1,7 +1,5 @@
 ﻿using AoCHelper;
 using SheepTools;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -15,7 +13,7 @@ namespace AoC_2020
             (_doorPublicKey, _cardPublicKey) = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var doorLoopSize = CalculateLoopSize(7, _doorPublicKey);
             var cardLoopSize = CalculateLoopSize(7, _cardPublicKey);
@@ -31,10 +29,10 @@ namespace AoC_2020
             }
 #endif
 
-            return encryptionKey1.ToString();
+            return new(encryptionKey1.ToString());
         }
 
-        public override string Solve_2() => string.Empty;
+        public override ValueTask<string> Solve_2() => new(string.Empty);
 
         private static int CalculateLoopSize(int subject, int publicKey)
         {

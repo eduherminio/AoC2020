@@ -1,7 +1,4 @@
 ﻿using AoCHelper;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -14,9 +11,9 @@ namespace AoC_2020
             _input = File.ReadAllText(InputFilePath).Split(',').Select(int.Parse).ToList();
         }
 
-        public override string Solve_1() => PlayMemoryGame_Array(2020);
+        public override ValueTask<string> Solve_1() => new(PlayMemoryGame_Array(2020));
 
-        public override string Solve_2() => PlayMemoryGame_Array(30_000_000);
+        public override ValueTask<string> Solve_2() => new(PlayMemoryGame_Array(30_000_000));
 
         /// <summary>
         /// ~2s

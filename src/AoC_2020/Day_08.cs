@@ -1,8 +1,6 @@
 ﻿using AoC_2020.AssemblyComputer;
 using AoCHelper;
 using FileParser;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -15,7 +13,7 @@ namespace AoC_2020
             _instructions = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             try
             {
@@ -23,13 +21,13 @@ namespace AoC_2020
             }
             catch (InfiniteLoopException e)
             {
-                return e.LastAccumulatorValue.ToString();
+                return new(e.LastAccumulatorValue.ToString());
             }
 
             throw new SolvingException();
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             for (int index = 0; index < _instructions.Count; ++index)
             {
@@ -54,7 +52,7 @@ namespace AoC_2020
                 // Run the code
                 try
                 {
-                    return Computer.ExecuteInstructions(_instructions).ToString();
+                    return new(Computer.ExecuteInstructions(_instructions).ToString());
                 }
                 catch (InfiniteLoopException) { /* Expected */ }
 

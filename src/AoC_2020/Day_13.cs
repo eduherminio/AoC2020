@@ -4,11 +4,7 @@
 
 using AoCHelper;
 using SheepTools;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -22,7 +18,7 @@ namespace AoC_2020
             (_earliestDeparture, _busFrequency) = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var validFrequencies = _busFrequency.Where(freq => freq != -1).ToList();
             for (uint delta = 0; delta < _earliestDeparture; ++delta)
@@ -31,7 +27,7 @@ namespace AoC_2020
                 {
                     if ((_earliestDeparture + delta) % frequency == 0)
                     {
-                        return $"{frequency * delta}";
+                        return new($"{frequency * delta}");
                     }
                 }
             }
@@ -39,7 +35,7 @@ namespace AoC_2020
             throw new SolvingException();
         }
 
-        public override string Solve_2() => Part2_mariomka();
+        public override ValueTask<string> Solve_2() => new(Part2_mariomka());
 
         /// <summary>
         /// ~96 min

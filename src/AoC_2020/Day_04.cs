@@ -1,9 +1,5 @@
 ﻿using AoCHelper;
 using FileParser;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace AoC_2020
@@ -59,15 +55,15 @@ namespace AoC_2020
             _rawInput = File.ReadAllText(InputFilePath);
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return _input.Count(dict =>
+            return new(_input.Count(dict =>
                 FieldsToCheck.All(key =>
                     dict.TryGetValue(key, out var str)))
-            .ToString();
+            .ToString());
         }
 
-        public override string Solve_2() => Part2_AsLittleRegexAsPossible();
+        public override ValueTask<string> Solve_2() => new(Part2_AsLittleRegexAsPossible());
 
         internal string Part2_Regex()
         {

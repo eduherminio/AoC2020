@@ -1,8 +1,5 @@
 ﻿using AoC_2020.Algorithms;
 using AoCHelper;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -16,14 +13,14 @@ namespace AoC_2020
             _input = File.ReadAllLines(InputFilePath).Select(long.Parse).ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return _input.PairOfNumbersThatSumN(2020)
+            return new(_input.PairOfNumbersThatSumN(2020)
                 .Aggregate((long)1, (total, n) => total * n)
-                .ToString();
+                .ToString());
         }
 
-        public override string Solve_2() => Part2_Dictionary();
+        public override ValueTask<string> Solve_2() => new(Part2_Dictionary());
 
         internal string Part2_Dictionary()
         {

@@ -1,8 +1,4 @@
 ﻿using AoCHelper;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -15,7 +11,7 @@ namespace AoC_2020
             _reversedLines = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             long results = 0;
 
@@ -24,10 +20,10 @@ namespace AoC_2020
                 results += CalculateLine(line, (expression) => expression.SolvePart1());
             }
 
-            return results.ToString();
+            return new(results.ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             long results = 0;
 
@@ -36,7 +32,7 @@ namespace AoC_2020
                 results += CalculateLine(line, (expression) => expression.SolvePart2());
             }
 
-            return results.ToString();
+            return new(results.ToString());
         }
 
         internal static long CalculateLine(string line, Func<Expression, long> solveMethod)

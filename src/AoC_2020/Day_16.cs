@@ -2,9 +2,6 @@
 using FileParser;
 using SheepTools;
 using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -17,7 +14,7 @@ namespace AoC_2020
             _input = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var errorRate = 0;
             foreach (var nearbyTicket in _input.NearbyTickets)
@@ -32,10 +29,10 @@ namespace AoC_2020
                 }
             }
 
-            return errorRate.ToString();
+            return new(errorRate.ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var validTickets = GetValidNearbyTickets().ToList();
 
@@ -86,10 +83,10 @@ namespace AoC_2020
                 }
             }
 
-            return indexByFieldName
+            return new(indexByFieldName
                 .Where(pair => pair.Key.StartsWith("departure"))
                 .Aggregate((double)1, (total, pair) => total * _input.MyTicket.FieldLengths[pair.Value])
-                .ToString();
+                .ToString());
         }
 
         private IEnumerable<Ticket> GetValidNearbyTickets()

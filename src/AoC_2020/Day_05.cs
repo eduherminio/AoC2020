@@ -1,8 +1,4 @@
 ﻿using AoCHelper;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -15,13 +11,13 @@ namespace AoC_2020
             _input = File.ReadAllLines(InputFilePath).ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return _input.Max(boardingPass => CalculateSeatId(ExtractSeat(boardingPass)))
-                .ToString();
+            return new(_input.Max(boardingPass => CalculateSeatId(ExtractSeat(boardingPass)))
+                .ToString());
         }
 
-        public override string Solve_2() => Part2_Linq();
+        public override ValueTask<string> Solve_2() => new(Part2_Linq());
 
         internal string Part2_Linq()
         {

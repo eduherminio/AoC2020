@@ -3,10 +3,6 @@
 using AoC_2020.GameOfLife;
 using AoCHelper;
 using SheepTools;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -19,14 +15,14 @@ namespace AoC_2020
             _input = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var blackTiles = GetInitialBlackTiles();
 
-            return blackTiles.Count.ToString();
+            return new(blackTiles.Count.ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var blackTiles = GetInitialBlackTiles().ToHashSet();
 
@@ -43,7 +39,7 @@ namespace AoC_2020
                 game.Mutate();
             }
 
-            return game.AliveCells.Count.ToString();
+            return new(game.AliveCells.Count.ToString());
         }
 
         private ICollection<Point> GetInitialBlackTiles()

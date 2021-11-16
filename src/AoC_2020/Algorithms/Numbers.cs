@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace AoC_2020.Algorithms
+﻿namespace AoC_2020.Algorithms
 {
     public static class Numbers
     {

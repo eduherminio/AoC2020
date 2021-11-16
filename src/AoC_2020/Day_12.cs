@@ -1,10 +1,6 @@
 ﻿using AoCHelper;
 using SheepTools.Extensions;
 using SheepTools.Model;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2020
 {
@@ -52,7 +48,7 @@ namespace AoC_2020
             _instructions = ParseInput().ToList();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var initialState = (Position: new IntPoint(0, 0), Direction: Direction.Right);
             var shipState = initialState;
@@ -62,10 +58,10 @@ namespace AoC_2020
                 shipState = Movements[instruction.Action](instruction, shipState);
             }
 
-            return initialState.Position.ManhattanDistance(shipState.Position).ToString();
+            return new(initialState.Position.ManhattanDistance(shipState.Position).ToString());
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var initialShipPosition = new IntPoint(0, 0);
             var initialWaypoint = new IntPoint(10, 1);
@@ -78,7 +74,7 @@ namespace AoC_2020
                 (shipPosition, waypoint) = MovementsPart2[instruction.Action](instruction, shipPosition, waypoint);
             }
 
-            return initialShipPosition.ManhattanDistance(shipPosition).ToString();
+            return new(initialShipPosition.ManhattanDistance(shipPosition).ToString());
         }
 
         private IEnumerable<Instruction> ParseInput()

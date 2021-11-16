@@ -1,9 +1,6 @@
 ﻿using AoCHelper;
 using SheepTools.Extensions;
 using SheepTools.Model;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace AoC_2020
@@ -18,9 +15,9 @@ namespace AoC_2020
             _input = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
-            return BagsThatCanContainABag(MyBagName).Count.ToString();
+            return new(BagsThatCanContainABag(MyBagName).Count.ToString());
 
             HashSet<Bag> BagsThatCanContainABag(string bagId, HashSet<Bag>? result = null)
             {
@@ -36,9 +33,9 @@ namespace AoC_2020
             }
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
-            return BagsContainedByABag(_input[MyBagName]).ToString();
+            return new(BagsContainedByABag(_input[MyBagName]).ToString());
 
             static long BagsContainedByABag(Bag bag)
             {

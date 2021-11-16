@@ -1,9 +1,6 @@
 ﻿using AoCHelper;
 using FileParser;
 using SheepTools.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace AoC_2020
@@ -19,7 +16,7 @@ namespace AoC_2020
             _input = ParseInput();
         }
 
-        public override string Solve_1()
+        public override ValueTask<string> Solve_1()
         {
             var memory = new Dictionary<string, long>();
 
@@ -31,7 +28,7 @@ namespace AoC_2020
                 }
             }
 
-            return memory.Values.Sum().ToString();
+            return new(memory.Values.Sum().ToString());
 
             static long ApplyMask(long value, string mask)
             {
@@ -51,7 +48,7 @@ namespace AoC_2020
             }
         }
 
-        public override string Solve_2()
+        public override ValueTask<string> Solve_2()
         {
             var memory = new Dictionary<long, long>();
 
@@ -68,7 +65,7 @@ namespace AoC_2020
                 }
             }
 
-            return memory.Values.Sum().ToString();
+            return new(memory.Values.Sum().ToString());
 
             static string ApplyMask(long address, string mask)
             {
